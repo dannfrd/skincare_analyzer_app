@@ -1,0 +1,66 @@
+[
+  {
+    "name": "Android SDK built for x86",
+    "id": "emulator-5554",
+    "isSupported": false,
+    "targetPlatform": "unsupported",
+    "emulator": true,
+    "sdk": "Android 8.0.0 (API 26)",
+    "capabilities": {
+      "hotReload": true,
+      "hotRestart": true,
+      "screenshot": true,
+      "flutterExit": true,
+      "hardwareRendering": true,
+      "startPaused": true
+    }
+  },
+  {
+    "name": "Windows",
+    "id": "windows",
+    "isSupported": true,
+    "targetPlatform": "windows-x64",
+    "emulator": false,
+    "sdk": "Microsoft Windows [Version 10.0.19045.6937]",
+    "capabilities": {
+      "hotReload": true,
+      "hotRestart": true,
+      "screenshot": false,
+      "flutterExit": true,
+      "hardwareRendering": false,
+      "startPaused": true
+    }
+  },
+  {
+    "name": "Chrome",
+    "id": "chrome",
+    "isSupported": true,
+    "targetPlatform": "web-javascript",
+    "emulator": false,
+    "sdk": "Google Chrome 144.0.7559.60",
+    "capabilities": {
+      "hotReload": true,
+      "hotRestart": true,
+      "screenshot": false,
+      "flutterExit": false,
+      "hardwareRendering": false,
+      "startPaused": true
+    }
+  },
+  {
+    "name": "Edge",
+    "id": "edge",
+    "isSupported": true,
+    "targetPlatform": "web-javascript",
+    "emulator": false,
+    "sdk": "Microsoft Edge 145.0.3800.82",
+    "capabilities": {
+      "hotReload": true,
+      "hotRestart": true,
+      "screenshot": false,
+      "flutterExit": false,
+      "hardwareRendering": false,
+      "startPaused": true
+    }
+  }
+]
