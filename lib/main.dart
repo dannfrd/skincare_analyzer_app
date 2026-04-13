@@ -5,6 +5,8 @@ import 'screens/splash_screen.dart';
 import 'screens/main_navigation.dart';
 import 'screens/scan_screen.dart';
 import 'screens/scan_progress_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
 void main() {
   runApp(const SkincareAnalyzerApp());
@@ -33,7 +35,7 @@ class SkincareAnalyzerApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primaryGreen,
-          background: AppColors.backgroundLight,
+          surface: AppColors.backgroundLight,
         ),
         scaffoldBackgroundColor: AppColors.backgroundLight,
         textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme)
@@ -46,6 +48,8 @@ class SkincareAnalyzerApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
         '/main': (context) => const MainNavigation(),
         '/scan': (context) => const ScanScreen(),
         // Progress and Results typically get pushed with arguments rather than simple routes

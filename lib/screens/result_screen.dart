@@ -11,14 +11,15 @@ class ResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Extract data from the backend JSON response
-    final aiAnalysisText = analysisData['ai_analysis'] ?? 'No analysis available';
-    
+    final aiAnalysisText =
+        analysisData['ai_analysis'] ?? 'No analysis available';
+
     // Instead of raw AI text, in the UI we show "Detected Ingredients"
-    // Since the API currently combines everything into markdown string `ai_analysis`, 
+    // Since the API currently combines everything into markdown string `ai_analysis`,
     // we would ideally parse it. For now, we'll try to display a list if we had structured data.
     // The given app design shows a clean list of ingredients.
     // Assuming backend evolves to return lists, we simulate the UI mapping here:
-    
+
     // Fallback Mock items matching design
     final List<Map<String, dynamic>> mockIngredients = [
       {'name': 'Aqua', 'function': 'Solvent', 'safe': true},
@@ -69,11 +70,15 @@ class ResultScreen extends StatelessWidget {
                               width: double.infinity,
                               height: 180,
                               color: const Color(0xFFE5CECC),
-                              child: const Icon(Icons.spa, size: 60, color: Colors.white),
+                              child: const Icon(
+                                Icons.spa,
+                                size: 60,
+                                color: Colors.white,
+                              ),
                             ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Title
                     const Text(
                       'Detected Ingredients',
@@ -94,21 +99,31 @@ class ResultScreen extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     // Ingredients List
-                    ...mockIngredients.map((ingredient) => _buildIngredientTile(ingredient)).toList(),
+                    ...mockIngredients.map(
+                      (ingredient) => _buildIngredientTile(ingredient),
+                    ),
 
                     // You could add an expandable section here for the FULL AI Analysis markdown
                     const SizedBox(height: 16),
                     Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      data: Theme.of(
+                        context,
+                      ).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
-                        title: const Text('Detailed AI Analysis', style: TextStyle(fontWeight: FontWeight.bold)),
+                        title: const Text(
+                          'Detailed AI Analysis',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         collapsedBackgroundColor: AppColors.cardLight,
                         backgroundColor: AppColors.cardLight,
                         childrenPadding: const EdgeInsets.all(16),
                         children: [
                           Text(
                             aiAnalysisText,
-                            style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textDark,
+                            ),
                           ),
                         ],
                       ),
@@ -118,7 +133,7 @@ class ResultScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Bottom Action Bar
             Container(
               padding: const EdgeInsets.all(20),
@@ -129,7 +144,7 @@ class ResultScreen extends StatelessWidget {
                     color: Colors.black.withOpacity(0.05),
                     offset: const Offset(0, -4),
                     blurRadius: 10,
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -139,7 +154,9 @@ class ResultScreen extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         // View deep breakdown or save to history
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to History')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Saved to History')),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
@@ -151,7 +168,13 @@ class ResultScreen extends StatelessWidget {
                         ),
                       ),
                       icon: const Icon(Icons.analytics),
-                      label: const Text('Analyze Ingredients', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      label: const Text(
+                        'Analyze Ingredients',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -160,7 +183,10 @@ class ResultScreen extends StatelessWidget {
                     children: [
                       const Text(
                         'Scan inaccurate? ',
-                        style: TextStyle(color: AppColors.textGray, fontSize: 13),
+                        style: TextStyle(
+                          color: AppColors.textGray,
+                          fontSize: 13,
+                        ),
                       ),
                       GestureDetector(
                         onTap: () {
@@ -169,9 +195,13 @@ class ResultScreen extends StatelessWidget {
                         },
                         child: const Text(
                           'Retake Photo',
-                          style: TextStyle(color: AppColors.primaryGreenDark, fontWeight: FontWeight.bold, fontSize: 13),
+                          style: TextStyle(
+                            color: AppColors.primaryGreenDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ],
@@ -200,7 +230,9 @@ class ResultScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              ingredient['safe'] ? Icons.water_drop_outlined : Icons.warning_amber_rounded, // Rough icon mapping
+              ingredient['safe']
+                  ? Icons.water_drop_outlined
+                  : Icons.warning_amber_rounded, // Rough icon mapping
               color: AppColors.primaryGreenDark,
             ),
           ),
@@ -228,7 +260,9 @@ class ResultScreen extends StatelessWidget {
             ),
           ),
           Icon(
-            ingredient['safe'] ? Icons.check_circle_outline : Icons.error_outline,
+            ingredient['safe']
+                ? Icons.check_circle_outline
+                : Icons.error_outline,
             color: ingredient['safe'] ? AppColors.primaryGreen : Colors.red,
             size: 28,
           ),

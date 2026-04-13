@@ -8,177 +8,169 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+class _SplashScreenState extends State<SplashScreen>
+  with TickerProviderStateMixin {
+  late AnimationController _progressController;
+  late Animation<double> _progressAnimation;
+
+  late AnimationController _fadeController;
+  late Animation<double> _logoFadeAnimation;
+  late Animation<double> _loadingFadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-        vsync: this, duration: const Duration(seconds: 3));
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+
+    // Fade-in animation for logo
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _logoFadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
+    _loadingFadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
     );
 
-    _controller.forward().then((value) {
-      Navigator.pushReplacementNamed(context, '/main');
+    // Progress bar animation
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _progressAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
+
+    // Start animations
+    _fadeController.forward();
+    Future.delayed(const Duration(milliseconds: 400), () {
+      _progressController.forward().then((_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      });
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _progressController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF68D377), // AppColors.primaryGreen
-              Color(0xFF4CA1E2), // Blueish gradient from reference
-            ],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo placeholder container
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.health_and_safety,
-                    size: 60,
-                    color: AppColors.primaryGreen,
-                  ),
+      backgroundColor: const Color(0xFFF5F7F5),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top spacer — pushes logo to ~center-upper area
+            const Spacer(flex: 3),
+
+            // Logo image with fade-in
+            FadeTransition(
+              opacity: _logoFadeAnimation,
+              child: Center(
+                child: Image.asset(
+                  'assets/images/logo2_splash.png',
+                  width: screenWidth * 0.55,
+                  fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 32),
-              const Text(
-                'SkinCare AI\nAnalyzer',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Analyze skincare ingredients safely\nwith AI',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 64),
-              // Progress Bar Area
-              SizedBox(
-                width: 240,
+            ),
+
+            // Spacer between logo and loading bar
+            const Spacer(flex: 2),
+
+            // Loading section with fade-in
+            FadeTransition(
+              opacity: _loadingFadeAnimation,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.12),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'INITIALIZING AI',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        AnimatedBuilder(
-                          animation: _animation,
-                          builder: (context, child) {
-                            return Text(
-                              '${(_animation.value * 100).toInt()}%',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: AnimatedBuilder(
-                        animation: _animation,
-                        builder: (context, child) {
-                          return FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: _animation.value,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
+                    // "LOADING" label and percentage
+                    AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'LOADING',
+                              style: TextStyle(
+                                color: Color(0xFF4CAF50),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 2.0,
                               ),
                             ),
-                          );
-                        },
-                      ),
+                            Text(
+                              '${(_progressAnimation.value * 100).toInt()}%',
+                              style: const TextStyle(
+                                color: Color(0xFF4CAF50),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: 8),
-                    const Align(
-                      alignment: Alignment.center,
-                      child: Text(
-                        'LOADING CLINICAL DATABASE...',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 10,
-                        ),
-                      ),
+                    const SizedBox(height: 12),
+
+                    // Progress bar
+                    AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return Container(
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E0E0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: _progressAnimation.value,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF66BB6A),
+                                      Color(0xFF4CAF50),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF4CAF50)
+                                          .withValues(alpha: 0.4),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: const Padding(
-        padding: EdgeInsets.only(bottom: 24.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.verified_user_outlined, color: Colors.white54, size: 16),
-            SizedBox(width: 8),
-            Text(
-              'Secure Health-Tech Analysis',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
             ),
+
+            // Bottom spacer
+            const Spacer(flex: 1),
           ],
         ),
       ),

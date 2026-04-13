@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/screens/home_screen.dart';
+import 'package:skincare_analyzer_app/screens/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -16,7 +17,7 @@ class _MainNavigationState extends State<MainNavigation> {
     const HomeScreen(),
     const Center(child: Text('Search Page Placeholder')),
     const Center(child: Text('History Page Placeholder')),
-    const Center(child: Text('Profile Page Placeholder')),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
