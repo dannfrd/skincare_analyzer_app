@@ -21,14 +21,14 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(
-                          Icons.spa,
-                          color: AppColors.primaryGreen,
-                          size: 28,
+                        Image.asset(
+                          'assets/images/logo3_home.png',
+                          width: 40,
+                          height: 40,
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'SkinCare AI',
+                          'Dermify',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -118,7 +118,7 @@ class HomeScreen extends StatelessWidget {
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                         child: Image.asset(
-                          'assets/images/placeholder.jpg', // Placeholder for now
+                          'assets/images/scanproduct.png', 
                           height: 180,
                           width: double.infinity,
                           fit: BoxFit.cover,

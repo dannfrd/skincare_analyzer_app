@@ -12,22 +12,68 @@ class ScanScreen extends StatefulWidget {
 
 class _ScanScreenState extends State<ScanScreen> {
   final ImagePicker _picker = ImagePicker();
+  File? _capturedImage;
+  bool _isCameraOpening = false;
 
-  Future<void> _pickImage(ImageSource source) async {
+  @override
+  void initState() {
+    super.initState();
+    // Automatically open camera when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openCamera();
+    });
+  }
+
+  Future<void> _openCamera() async {
+    if (_isCameraOpening) return;
+    setState(() => _isCameraOpening = true);
+
     try {
-      final XFile? image = await _picker.pickImage(source: source);
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (!mounted) return;
+
+      if (image != null) {
+        setState(() {
+          _capturedImage = File(image.path);
+          _isCameraOpening = false;
+        });
+      } else {
+        // User cancelled the camera, go back
+        setState(() => _isCameraOpening = false);
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isCameraOpening = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error opening camera: $e')),
+      );
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         if (!mounted) return;
-        Navigator.pushReplacementNamed(
-          context,
-          '/progress',
-          arguments: File(image.path),
-        );
+        setState(() {
+          _capturedImage = File(image.path);
+        });
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error selecting image: $e')),
+      );
+    }
+  }
+
+  void _proceedToAnalysis() {
+    if (_capturedImage != null) {
+      Navigator.pushReplacementNamed(
+        context,
+        '/progress',
+        arguments: _capturedImage,
       );
     }
   }
@@ -63,291 +109,175 @@ class _ScanScreenState extends State<ScanScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             children: [
-              const SizedBox(height: 10),
-              // Status Top Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'AI Analyzing...',
-                    style: TextStyle(
-                      color: AppColors.primaryGreen,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                  Text(
-                    'Optimizing focus',
-                    style: TextStyle(
-                      color: AppColors.textGray,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Dummy progress bar
-              Row(
-                children: [
-                  Expanded(
-                    flex: 7,
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen,
-                        borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(2),
-                            bottomLeft: Radius.circular(2)),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondaryGreen,
-                        borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(2),
-                            bottomRight: Radius.circular(2)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // Scanner Area Viewfinder Mock
+              // Image Preview Area
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5CECC), // Match design pinkish tone
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Simulated product label
-                      Container(
-                        width: 140,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: const Offset(4, 4),
-                            )
-                          ],
-                        ),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.spa, size: 40, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('Sc motole',
-                                style: TextStyle(
-                                    fontSize: 10, color: Colors.grey)),
-                            Text('PRODUCT LABEL',
-                                style: TextStyle(
-                                    fontSize: 12, fontWeight: FontWeight.bold)),
-                            Divider(indent: 20, endIndent: 20),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Text(
-                                'Water, glycerin, niacinamide, ceramide, hyaluronic acid, fragrance, paraben.',
-                                style: TextStyle(fontSize: 6, color: Colors.grey),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Scanner Guide Box (Green Dashed)
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppColors.primaryGreen,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Scanning Laser Fake
-                      Positioned(
-                        top: 100,
-                        left: 16,
-                        right: 16,
-                        child: Container(
-                          height: 2,
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryGreen.withOpacity(0.5),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              )
-                            ],
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                      ),
-                      
-                      // Floating instruction
-                      Positioned(
-                        bottom: 40,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Align text within the box',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _capturedImage != null
+                    ? _buildImagePreview()
+                    : _buildLoadingState(),
               ),
 
               const SizedBox(height: 24),
 
-              const Text(
-                'Take a clear photo',
-                style: TextStyle(
+              // Title & Subtitle
+              Text(
+                _capturedImage != null
+                    ? 'Photo Captured'
+                    : 'Opening Camera...',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
-                  'Position the ingredient label inside the guide for the best results.',
+                  _capturedImage != null
+                      ? 'Review your photo below, then analyze or retake.'
+                      : 'Please allow camera access to scan product labels.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textGray, fontSize: 13),
+                  style: const TextStyle(
+                      color: AppColors.textGray, fontSize: 13),
                 ),
               ),
 
               const SizedBox(height: 32),
 
               // Action Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Gallery
-                  Column(
-                    children: [
-                      InkWell(
-                        onTap: () => _pickImage(ImageSource.gallery),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceGreen,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.photo_library_outlined,
-                              color: AppColors.primaryGreen),
-                        ),
+              if (_capturedImage != null) ...[
+                // Analyze Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _proceedToAnalysis,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 8),
-                      const Text('GALLERY',
-                          style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textGray)),
-                    ],
-                  ),
-                  
-                  // Camera Capture (Main)
-                  Column(
-                    children: [
-                      InkWell(
-                        onTap: () => _pickImage(ImageSource.camera),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: AppColors.primaryGreen, width: 3),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryGreen,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.camera_alt,
-                                color: Colors.white, size: 32),
-                          ),
-                        ),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.science),
+                    label: const Text(
+                      'Analyze Ingredients',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-
-                  // Flash (Fake for UI)
-                  Column(
-                    children: [
-                      InkWell(
-                        onTap: () {},
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceGreen,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.flash_on,
-                              color: AppColors.primaryGreen),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text('FLASH',
-                          style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textGray)),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              
-              // Secondary Gallery Upload Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _pickImage(ImageSource.gallery),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE2E8F0), // slate-200
-                    foregroundColor: AppColors.textDark,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Upload from Gallery',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-              ),
+                const SizedBox(height: 12),
+
+                // Retake & Gallery Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _openCamera,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryGreen,
+                          side: const BorderSide(
+                              color: AppColors.primaryGreen, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.camera_alt, size: 20),
+                        label: const Text('Retake',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickFromGallery,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textDark,
+                          side: BorderSide(
+                              color: Colors.grey.shade300, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.photo_library_outlined,
+                            size: 20),
+                        label: const Text('Gallery',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               const SizedBox(height: 24),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.file(
+            _capturedImage!,
+            fit: BoxFit.cover,
+          ),
+          // Subtle green border overlay
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primaryGreen.withOpacity(0.6),
+                width: 2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceGreen,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Launching Camera...',
+            style: TextStyle(
+              color: AppColors.primaryGreenDark,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
