@@ -1,8 +1,10 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
-import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:skincare_analyzer_app/screens/result_screen.dart';
+import 'package:skincare_analyzer_app/services/api_service.dart';
+import 'package:skincare_analyzer_app/services/ocr_service.dart';
 
 class ScanProgressScreen extends StatefulWidget {
   final File imageFile;
@@ -30,29 +32,32 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
     setState(() => _currentStep = 1); // Extracting Text
 
     try {
-      // Stage 2: Actual API Call
-      final result = await ApiService.analyzeImage(widget.imageFile);
-      
-      if (!mounted) return;
-      setState(() => _currentStep = 2); // Analysis complete
+      // Stage 2: Run OCR locally in Flutter app
+      final extractedText = await OcrService.extractText(widget.imageFile);
 
-      // Stage 3: Short delay then navigate to results
+      if (!mounted) return;
+      setState(() => _currentStep = 2); // AI analysis
+
+      // Stage 3: Send extracted text to backend analysis endpoint
+      final result = await ApiService.analyzeText(extractedText);
+
+      // Stage 4: Short delay then navigate to results
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => ResultScreen(analysisData: result, imageFile: widget.imageFile),
+          builder: (context) =>
+              ResultScreen(analysisData: result, imageFile: widget.imageFile),
         ),
       );
-
     } catch (e) {
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Analysis failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Analysis failed: $e')));
     }
   }
 
@@ -85,11 +90,32 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle)),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  Container(width: 24, height: 8, decoration: BoxDecoration(color: AppColors.primaryGreen, borderRadius: BorderRadius.circular(4))),
+                  Container(
+                    width: 24,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.secondaryGreen, shape: BoxShape.circle)),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryGreen,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 32),
@@ -103,17 +129,21 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _currentStep == 0 ? 'Image Processing' : _currentStep == 1 ? 'OCR Text Extraction' : 'AI Ingredient Analysis',
+                      _currentStep == 0
+                          ? 'Image Processing'
+                          : _currentStep == 1
+                          ? 'OCR Text Extraction'
+                          : 'AI Ingredient Analysis',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -124,20 +154,32 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _currentStep == 0 ? 'Optimizing image quality...' : _currentStep == 1 ? 'Extracting text from image...' : 'Analyzing safely...',
+                          _currentStep == 0
+                              ? 'Optimizing image quality...'
+                              : _currentStep == 1
+                              ? 'Extracting text from image...'
+                              : 'Analyzing safely...',
                           style: const TextStyle(
                             color: AppColors.primaryGreenDark,
                             fontSize: 13,
                           ),
                         ),
                         if (_isAnalyzing)
-                          const Text('65%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), // Mock percentage
+                          const Text(
+                            '65%',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ), // Mock percentage
                       ],
                     ),
                     const SizedBox(height: 12),
                     if (_isAnalyzing)
                       LinearProgressIndicator(
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primaryGreen,
+                        ),
                         backgroundColor: AppColors.secondaryGreen,
                         borderRadius: BorderRadius.circular(4),
                         minHeight: 8,
@@ -163,7 +205,9 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                     _buildStepRow(
                       icon: Icons.sync,
                       title: 'OCR Text Extraction',
-                      subtitle: _currentStep >= 2 ? 'Completed' : (_currentStep == 1 ? 'In Progress' : 'Upcoming'),
+                      subtitle: _currentStep >= 2
+                          ? 'Completed'
+                          : (_currentStep == 1 ? 'In Progress' : 'Upcoming'),
                       isActive: _currentStep >= 1,
                       isDone: _currentStep >= 2,
                     ),
@@ -188,7 +232,11 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                       color: AppColors.surfaceGreen,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.psychology, color: AppColors.primaryGreen, size: 32),
+                    child: const Icon(
+                      Icons.psychology,
+                      color: AppColors.primaryGreen,
+                      size: 32,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -232,7 +280,10 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Cancel Processing', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Cancel Processing',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -242,24 +293,36 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
     );
   }
 
-  Widget _buildStepRow({required IconData icon, required String title, required String subtitle, required bool isActive, required bool isDone}) {
+  Widget _buildStepRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isActive,
+    required bool isDone,
+  }) {
     return Row(
       children: [
         Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: isDone ? AppColors.primaryGreen : (isActive ? Colors.white : AppColors.backgroundLight),
+            color: isDone
+                ? AppColors.primaryGreen
+                : (isActive ? Colors.white : AppColors.backgroundLight),
             shape: BoxShape.circle,
             border: Border.all(
-              color: isDone ? AppColors.primaryGreen : (isActive ? AppColors.primaryGreen : Colors.grey.shade300),
+              color: isDone
+                  ? AppColors.primaryGreen
+                  : (isActive ? AppColors.primaryGreen : Colors.grey.shade300),
               width: 2,
             ),
           ),
           child: Icon(
             icon,
             size: 20,
-            color: isDone ? Colors.white : (isActive ? AppColors.primaryGreen : Colors.grey.shade400),
+            color: isDone
+                ? Colors.white
+                : (isActive ? AppColors.primaryGreen : Colors.grey.shade400),
           ),
         ),
         const SizedBox(width: 16),
@@ -278,7 +341,11 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 14,
-                color: isDone ? AppColors.primaryGreenDark : (isActive ? AppColors.primaryGreen : Colors.grey.shade400),
+                color: isDone
+                    ? AppColors.primaryGreenDark
+                    : (isActive
+                          ? AppColors.primaryGreen
+                          : Colors.grey.shade400),
               ),
             ),
           ],
