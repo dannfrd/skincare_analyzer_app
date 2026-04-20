@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
 
@@ -11,8 +13,7 @@ class ResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Extract data from the backend JSON response
-    final aiAnalysisText =
-        analysisData['ai_analysis'] ?? 'No analysis available';
+    final aiAnalysisText = _buildAiAnalysisText();
 
     // Instead of raw AI text, in the UI we show "Detected Ingredients"
     // Since the API currently combines everything into markdown string `ai_analysis`,
@@ -141,7 +142,7 @@ class ResultScreen extends StatelessWidget {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     offset: const Offset(0, -4),
                     blurRadius: 10,
                   ),
@@ -211,6 +212,30 @@ class ResultScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _buildAiAnalysisText() {
+    final dynamic aiAnalysis = analysisData['ai_analysis'];
+
+    if (aiAnalysis is String && aiAnalysis.trim().isNotEmpty) {
+      return aiAnalysis;
+    }
+
+    if (aiAnalysis is Map<String, dynamic>) {
+      final dynamic modelOutput = aiAnalysis['model_output'];
+      if (modelOutput is String && modelOutput.trim().isNotEmpty) {
+        return modelOutput;
+      }
+
+      return const JsonEncoder.withIndent('  ').convert(aiAnalysis);
+    }
+
+    final dynamic recommendation = analysisData['recommendation'];
+    if (recommendation is String && recommendation.trim().isNotEmpty) {
+      return recommendation;
+    }
+
+    return 'No analysis available';
   }
 
   Widget _buildIngredientTile(Map<String, dynamic> ingredient) {
