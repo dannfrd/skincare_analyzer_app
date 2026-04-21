@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/services/api_service.dart';
 
 class ResultScreen extends StatelessWidget {
   final Map<String, dynamic> analysisData;
@@ -669,12 +670,29 @@ class ResultScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                final analysisId = _toInt(analysisData['analysis_id']) ?? 0;
+                
+                // Show loading snackbar
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Hasil analisis sudah tersimpan di histori.'),
-                  ),
+                  const SnackBar(content: Text('Menyimpan hasil ke histori...')),
                 );
+
+                if (analysisId > 0) {
+                  await ApiService.saveAnalysisHistory(analysisId);
+                }
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Berhasil disimpan di Histori!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // Return to main layout and force history refresh (we navigate to route /main which re-inits)
+                  Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,

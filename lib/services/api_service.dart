@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'user_session.dart';
 
 class ApiService {
   static const String _envBaseUrl = String.fromEnvironment(
@@ -28,6 +29,7 @@ class ApiService {
         'POST',
         Uri.parse('$baseUrl/analyze-image'),
       );
+      request.headers.addAll(UserSession.authHeaders);
 
       request.files.add(
         await http.MultipartFile.fromPath('file', imageFile.path),
@@ -70,7 +72,7 @@ class ApiService {
       final response = await http
           .post(
             Uri.parse('$baseUrl/analyze'),
-            headers: {'Content-Type': 'application/json'},
+            headers: UserSession.authHeaders,
             body: jsonEncode({'text': text}),
           )
           .timeout(const Duration(seconds: 90));
@@ -92,6 +94,44 @@ class ApiService {
       throw Exception('Backend returned invalid JSON: $e');
     } catch (e) {
       throw Exception('Error sending OCR text to backend: $e');
+    }
+  }
+
+  static Future<List<dynamic>> getHistory() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/history'),
+        headers: UserSession.authHeaders,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) return data;
+        if (data is Map && data.containsKey('items')) return data['items'] as List<dynamic>;
+        if (data is Map && data.containsKey('data')) return data['data'] as List<dynamic>;
+        return [];
+      } else {
+        throw Exception('Failed to fetch history: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching history: $e');
+    }
+  }
+
+  static Future<bool> saveAnalysisHistory(int analysisId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/history/save'),
+        headers: UserSession.authHeaders,
+        body: jsonEncode({'analysis_id': analysisId}),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 }

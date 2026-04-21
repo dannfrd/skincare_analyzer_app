@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:skincare_analyzer_app/main.dart'; // To access AppColors
+import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/services/user_session.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,10 +47,23 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Start animations
     _fadeController.forward();
+    
+    // Load session sequentially then start progress bar
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Attempt to load existing user session
+    await UserSession.loadSession();
+    
     Future.delayed(const Duration(milliseconds: 400), () {
       _progressController.forward().then((_) {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/login');
+          if (UserSession.isLoggedIn) {
+            Navigator.pushReplacementNamed(context, '/main');
+          } else {
+            Navigator.pushReplacementNamed(context, '/login');
+          }
         }
       });
     });

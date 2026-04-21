@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'screens/splash_screen.dart';
 import 'screens/main_navigation.dart';
@@ -7,8 +8,11 @@ import 'screens/scan_screen.dart';
 import 'screens/scan_progress_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/notification_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const SkincareAnalyzerApp());
 }
 
@@ -52,6 +56,7 @@ class SkincareAnalyzerApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/main': (context) => const MainNavigation(),
         '/scan': (context) => const ScanScreen(),
+        '/notifications': (context) => const NotificationScreen(),
         // Progress and Results typically get pushed with arguments rather than simple routes
       },
       onGenerateRoute: (settings) {
