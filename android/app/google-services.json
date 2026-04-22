@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "598460969503",
+    "project_id": "dermify-e69de",
+    "storage_bucket": "dermify-e69de.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598460969503:android:49dd1fa18449c6036b5b2a",
+        "android_client_info": {
+          "package_name": "com.example.skincare_analyzer_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "598460969503-vr6fah5ggvdgtsk438b0d8v11v7td3js.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.skincare_analyzer_app",
+            "certificate_hash": "ff298b2a102654d886d0e99c0dc15fcc3520d8e6"
+          }
+        },
+        {
+          "client_id": "598460969503-7pqf272degb53lv0ivd03c3cf97tt0v1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjztrBZfJDZ5ZAjQN6qVAA_FKyDywWsXs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "598460969503-7pqf272degb53lv0ivd03c3cf97tt0v1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

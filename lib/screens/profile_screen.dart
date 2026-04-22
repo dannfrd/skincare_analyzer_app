@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
 
+import 'package:skincare_analyzer_app/services/user_session.dart';
+
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback? onNavigateToHistory;
+
+  const ProfileScreen({super.key, this.onNavigateToHistory});
 
   @override
   Widget build(BuildContext context) {
+    // Assuming UserSession has been loaded during splash screen
+    final String userName = UserSession.userName ?? 'User';
+    final String userEmail = UserSession.userEmail ?? 'No email';
+    final String totalScans = '0'; // Would ideally come from stats API, setting to 0 placeholder for now
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
@@ -105,9 +114,9 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // User Name & Email
-                const Text(
-                  'Alex Rivera',
-                  style: TextStyle(
+                Text(
+                  userName,
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textDark,
@@ -115,8 +124,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'alex@example.com',
-                  style: TextStyle(
+                  userEmail,
+                  style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.textGray,
                   ),
@@ -134,8 +143,8 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        '24',
-                        style: TextStyle(
+                        totalScans,
+                        style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryGreenDark,
@@ -198,7 +207,11 @@ class ProfileScreen extends StatelessWidget {
                       _buildMenuItem(
                         icon: Icons.history,
                         title: 'Scan History',
-                        onTap: () {},
+                        onTap: () {
+                          if (onNavigateToHistory != null) {
+                            onNavigateToHistory!();
+                          }
+                        },
                       ),
                       Divider(height: 1, indent: 56, color: Colors.grey.shade100),
                       _buildMenuItem(
@@ -227,83 +240,19 @@ class ProfileScreen extends StatelessWidget {
                   child: _buildMenuItem(
                     icon: Icons.logout,
                     title: 'Logout',
-                    onTap: () {},
+                    onTap: () async {
+                      await UserSession.clearSession();
+                      if (context.mounted) {
+                        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                      }
+                    },
                     iconColor: Colors.redAccent,
                     textColor: Colors.redAccent,
                     showChevron: false,
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Upgrade Banner
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primaryGreen,
-                        AppColors.primaryGreenDark,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryGreen.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Upgrade to Dermify+',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Get detailed ingredient analysis and personalized dermatological routine planning.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withOpacity(0.9),
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primaryGreenDark,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'Get Started',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
+                
               ],
             ),
           ),
