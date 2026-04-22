@@ -1,22 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/screens/result_screen.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:skincare_analyzer_app/services/user_session.dart';
 
 // Dummy data model
 class ScanHistoryItem {
+  final int? analysisId;
   final String productName;
   final String brand;
   final String date;
   final String riskLevel; // 'safe', 'moderate', 'high'
+  final String summary;
+  final String recommendation;
   final Color imageColor;
   final IconData imageIcon;
 
   const ScanHistoryItem({
+    required this.analysisId,
     required this.productName,
     required this.brand,
     required this.date,
     required this.riskLevel,
+    required this.summary,
+    required this.recommendation,
     required this.imageColor,
     required this.imageIcon,
   });
@@ -59,12 +66,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
 
         return ScanHistoryItem(
+          analysisId: _toInt(e['analysis_id']) ?? _toInt(analysis['id']),
           productName: product['name'] ?? 'Unknown Product',
           brand: product['brand'] ?? 'Unknown Brand',
           date: e['created_at'] != null 
               ? e['created_at'].toString().split('T')[0] 
               : 'Unknown Date',
           riskLevel: riskStr,
+          summary: analysis['summary']?.toString() ?? 'Ringkasan analisis belum tersedia.',
+          recommendation: analysis['recommendation']?.toString() ?? 'Belum ada rekomendasi tambahan.',
           imageColor: const Color(0xFFD6EAF0),
           imageIcon: Icons.water_drop_outlined,
         );
@@ -84,6 +94,78 @@ class _HistoryScreenState extends State<HistoryScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  int? _toInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value.trim());
+    }
+    return null;
+  }
+
+  Map<String, dynamic> _buildFallbackAnalysisData(ScanHistoryItem item) {
+    final fallbackId = item.analysisId ?? 0;
+    return {
+      'analysis_id': fallbackId,
+      'summary': item.summary,
+      'recommendation': item.recommendation,
+      'expert_analysis': {
+        'warnings_found': item.riskLevel == 'safe' ? 0 : 1,
+        'total_ingredients_identified': 0,
+        'total_unknown': 0,
+        'flags': const [],
+        'unknown_list': const [],
+      },
+      'matched_ingredients': const [],
+      'ai_analysis': {
+        'text': item.recommendation,
+        'model': '-',
+        'models_tried': const [],
+      },
+    };
+  }
+
+  void _openResultScreen(Map<String, dynamic> data) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ResultScreen(analysisData: data),
+      ),
+    );
+  }
+
+  Future<void> _openHistoryDetail(ScanHistoryItem item) async {
+    final analysisId = item.analysisId;
+    if (analysisId == null || analysisId <= 0) {
+      _openResultScreen(_buildFallbackAnalysisData(item));
+      return;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Membuka detail analisis...')),
+    );
+
+    try {
+      final detail = await ApiService.getAnalysisDetail(analysisId);
+      if (!mounted) return;
+
+      final mergedData = Map<String, dynamic>.from(detail);
+      mergedData.putIfAbsent('analysis_id', () => mergedData['id']);
+      _openResultScreen(mergedData);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal ambil detail lengkap, menampilkan data ringkas. ${e.toString().replaceAll('Exception: ', '')}')),
+      );
+      _openResultScreen(_buildFallbackAnalysisData(item));
     }
   }
 
@@ -320,9 +402,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              // TODO: Navigate to detail screen
-            },
+            onTap: () => _openHistoryDetail(item),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Row(

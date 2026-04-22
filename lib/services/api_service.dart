@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+
 import 'user_session.dart';
 
 class ApiService {
@@ -132,6 +133,43 @@ class ApiService {
       return false;
     } catch (e) {
       return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAnalysisDetail(int analysisId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/analysis/$analysisId'),
+        headers: UserSession.authHeaders,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to fetch analysis detail: ${response.statusCode} - ${response.body}',
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        if (!decoded.containsKey('analysis_id') && decoded['id'] != null) {
+          decoded['analysis_id'] = decoded['id'];
+        }
+        return decoded;
+      }
+
+      if (decoded is Map) {
+        final mapped = decoded.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+        if (!mapped.containsKey('analysis_id') && mapped['id'] != null) {
+          mapped['analysis_id'] = mapped['id'];
+        }
+        return mapped;
+      }
+
+      throw Exception('Invalid analysis detail response format');
+    } catch (e) {
+      throw Exception('Error fetching analysis detail: $e');
     }
   }
 }
