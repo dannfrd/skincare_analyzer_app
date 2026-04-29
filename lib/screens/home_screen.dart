@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/services/fcm_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, this.onNavigateToHistory});
@@ -39,22 +40,58 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/notifications');
+                    // Notification icon dengan badge unread count
+                    ValueListenableBuilder<List<FcmNotification>>(
+                      valueListenable: FcmService.instance.notifications,
+                      builder: (context, notifications, _) {
+                        final unread = FcmService.instance.unreadCount;
+                        return GestureDetector(
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/notifications'),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.surfaceGreen,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_none,
+                                  color: AppColors.primaryGreenDark,
+                                  size: 24,
+                                ),
+                              ),
+                              if (unread > 0)
+                                Positioned(
+                                  top: -2,
+                                  right: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 18,
+                                      minHeight: 18,
+                                    ),
+                                    child: Text(
+                                      unread > 99 ? '99+' : '$unread',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
                       },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceGreen,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.notifications_none,
-                          color: AppColors.primaryGreenDark,
-                          size: 24,
-                        ),
-                      ),
                     ),
                   ],
                 ),
