@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/services/auth_service.dart';
 
@@ -58,6 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleGoogleLogin() async {
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -69,9 +71,16 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacementNamed(context, '/main');
     } catch (e) {
       if (!mounted) return;
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+
+      // Cancellation is a normal outcome when user closes the Google flow.
+      if (errorMessage.toLowerCase().contains('dibatalkan oleh pengguna')) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
+          content: Text(errorMessage),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -91,7 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -135,10 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Your professional skincare concierge.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textGray,
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppColors.textGray),
                   ),
                   const SizedBox(height: 40),
 
@@ -180,7 +189,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your email';
                             }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                            if (!RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(value)) {
                               return 'Please enter a valid email';
                             }
                             return null;
@@ -229,8 +240,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: AppColors.textGray,
                                 size: 20,
                               ),
-                              onPressed: () =>
-                                  setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
                           ),
                           validator: (value) {
@@ -328,10 +340,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Don't have an account? Register
                   RichText(
                     text: TextSpan(
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textGray,
-                      ),
+                      style: TextStyle(fontSize: 14, color: AppColors.textGray),
                       children: [
                         const TextSpan(text: "Don't have an account?  "),
                         TextSpan(
@@ -342,7 +351,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
-                              Navigator.pushReplacementNamed(context, '/register');
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/register',
+                              );
                             },
                         ),
                       ],
@@ -364,10 +376,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: TextStyle(
-        color: Colors.grey.shade400,
-        fontSize: 14,
-      ),
+      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: AppColors.surfaceGreen.withOpacity(0.4),
