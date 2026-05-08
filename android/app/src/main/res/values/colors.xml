@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warna icon notifikasi FCM: primaryGreen #68D377 -->
+    <color name="notification_color">#68D377</color>
+</resources>

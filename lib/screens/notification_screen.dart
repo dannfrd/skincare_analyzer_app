@@ -1,118 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/services/fcm_service.dart';
 
-// --- Notification Model ---
-enum NotificationType { scanComplete, tip, reminder, update }
-
-class NotificationItem {
-  final String id;
-  final String title;
-  final String message;
-  final NotificationType type;
-  final DateTime timestamp;
-  final bool isRead;
-
-  NotificationItem({
-    required this.id,
-    required this.title,
-    required this.message,
-    required this.type,
-    required this.timestamp,
-    this.isRead = false,
-  });
-
-  NotificationItem copyWith({bool? isRead}) {
-    return NotificationItem(
-      id: id,
-      title: title,
-      message: message,
-      type: type,
-      timestamp: timestamp,
-      isRead: isRead ?? this.isRead,
-    );
-  }
-}
-
-// --- Dummy Data ---
-List<NotificationItem> generateDummyNotifications() {
-  final now = DateTime.now();
-  return [
-    NotificationItem(
-      id: '1',
-      title: 'Scan Selesai',
-      message: 'Analisis untuk "CeraVe Moisturizing Cream" telah selesai. Lihat hasilnya sekarang!',
-      type: NotificationType.scanComplete,
-      timestamp: now.subtract(const Duration(minutes: 5)),
-      isRead: false,
-    ),
-    NotificationItem(
-      id: '2',
-      title: 'Tips Perawatan Kulit',
-      message: 'Tahukah kamu? Niacinamide dapat membantu memperbaiki tekstur kulit dan menyamarkan pori-pori.',
-      type: NotificationType.tip,
-      timestamp: now.subtract(const Duration(hours: 1)),
-      isRead: false,
-    ),
-    NotificationItem(
-      id: '3',
-      title: 'Pengingat Rutinitas',
-      message: 'Jangan lupa aplikasikan sunscreen sebelum keluar rumah hari ini! ☀️',
-      type: NotificationType.reminder,
-      timestamp: now.subtract(const Duration(hours: 3)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '4',
-      title: 'Scan Selesai',
-      message: 'Analisis untuk "The Ordinary Hyaluronic Acid" telah selesai. Skor keamanan: 92/100.',
-      type: NotificationType.scanComplete,
-      timestamp: now.subtract(const Duration(hours: 6)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '5',
-      title: 'Update Aplikasi',
-      message: 'Dermify v2.1 tersedia! Fitur baru: deteksi alergen dan rekomendasi produk pengganti.',
-      type: NotificationType.update,
-      timestamp: now.subtract(const Duration(days: 1)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '6',
-      title: 'Tips Perawatan Kulit',
-      message: 'Retinol sebaiknya digunakan pada malam hari dan selalu diikuti dengan moisturizer.',
-      type: NotificationType.tip,
-      timestamp: now.subtract(const Duration(days: 1, hours: 5)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '7',
-      title: 'Scan Selesai',
-      message: 'Analisis untuk "Somethinc Niacinamide Serum" telah selesai. Ditemukan 3 bahan aktif utama.',
-      type: NotificationType.scanComplete,
-      timestamp: now.subtract(const Duration(days: 2)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '8',
-      title: 'Pengingat Rutinitas',
-      message: 'Sudah waktunya mengganti sunscreen kamu. Produk sunscreen terbuka sebaiknya diganti setiap 6 bulan.',
-      type: NotificationType.reminder,
-      timestamp: now.subtract(const Duration(days: 3)),
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '9',
-      title: 'Tips Perawatan Kulit',
-      message: 'Hindari mencampurkan Vitamin C dan AHA/BHA dalam satu waktu pemakaian untuk menghindari iritasi.',
-      type: NotificationType.tip,
-      timestamp: now.subtract(const Duration(days: 5)),
-      isRead: true,
-    ),
-  ];
-}
-
-// --- Notification Screen ---
+// ─────────────────────────────────────────────────────────────
+// Notification Screen — menggunakan data FCM real
+// ─────────────────────────────────────────────────────────────
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -120,201 +12,256 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
-  late List<NotificationItem> _notifications;
+class _NotificationScreenState extends State<NotificationScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _notifications = generateDummyNotifications();
+
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _fadeController.forward();
+
+    // Dengarkan perubahan list notifikasi dari FCM service
+    FcmService.instance.notifications.addListener(_onNotificationsChanged);
   }
 
-  int get _unreadCount => _notifications.where((n) => !n.isRead).length;
-
-  void _markAsRead(String id) {
-    setState(() {
-      final index = _notifications.indexWhere((n) => n.id == id);
-      if (index != -1) {
-        _notifications[index] = _notifications[index].copyWith(isRead: true);
-      }
-    });
+  void _onNotificationsChanged() {
+    if (mounted) setState(() {});
   }
 
-  void _markAllAsRead() {
-    setState(() {
-      _notifications = _notifications
-          .map((n) => n.copyWith(isRead: true))
-          .toList();
-    });
+  @override
+  void dispose() {
+    FcmService.instance.notifications.removeListener(_onNotificationsChanged);
+    _fadeController.dispose();
+    super.dispose();
   }
 
-  void _deleteNotification(String id) {
-    setState(() {
-      _notifications.removeWhere((n) => n.id == id);
-    });
-  }
+  List<FcmNotification> get _notifications =>
+      FcmService.instance.notifications.value;
+  int get _unreadCount => FcmService.instance.unreadCount;
 
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final diff = now.difference(timestamp);
-
+  // ── Helpers ─────────────────────────────────────────────────
+  String _formatTimestamp(DateTime ts) {
+    final diff = DateTime.now().difference(ts);
     if (diff.inMinutes < 1) return 'Baru saja';
     if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
     if (diff.inHours < 24) return '${diff.inHours} jam lalu';
     if (diff.inDays < 7) return '${diff.inDays} hari lalu';
-    return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    return '${ts.day}/${ts.month}/${ts.year}';
   }
 
-  IconData _getIcon(NotificationType type) {
-    switch (type) {
-      case NotificationType.scanComplete:
-        return Icons.document_scanner;
-      case NotificationType.tip:
-        return Icons.lightbulb_outline;
-      case NotificationType.reminder:
-        return Icons.alarm;
-      case NotificationType.update:
-        return Icons.system_update;
+  // ── Warna badge ──────────────────────────────────────────────
+  Color _getBadgeColor(FcmNotification n) {
+    final title = n.title.toLowerCase();
+    if (title.contains('scan') || title.contains('selesai')) {
+      return AppColors.primaryGreen;
     }
-  }
-
-  Color _getIconColor(NotificationType type) {
-    switch (type) {
-      case NotificationType.scanComplete:
-        return AppColors.primaryGreen;
-      case NotificationType.tip:
-        return const Color(0xFFFFA726);
-      case NotificationType.reminder:
-        return const Color(0xFF42A5F5);
-      case NotificationType.update:
-        return const Color(0xFFAB47BC);
+    if (title.contains('tip') || title.contains('perawatan')) {
+      return const Color(0xFFFFA726);
     }
-  }
-
-  Color _getIconBgColor(NotificationType type) {
-    switch (type) {
-      case NotificationType.scanComplete:
-        return AppColors.surfaceGreen;
-      case NotificationType.tip:
-        return const Color(0xFFFFF3E0);
-      case NotificationType.reminder:
-        return const Color(0xFFE3F2FD);
-      case NotificationType.update:
-        return const Color(0xFFF3E5F5);
+    if (title.contains('ingat') || title.contains('reminder')) {
+      return const Color(0xFF42A5F5);
     }
+    return const Color(0xFFAB47BC); // update / lainnya
   }
 
+  Color _getBadgeBg(FcmNotification n) {
+    final title = n.title.toLowerCase();
+    if (title.contains('scan') || title.contains('selesai')) {
+      return AppColors.surfaceGreen;
+    }
+    if (title.contains('tip') || title.contains('perawatan')) {
+      return const Color(0xFFFFF3E0);
+    }
+    if (title.contains('ingat') || title.contains('reminder')) {
+      return const Color(0xFFE3F2FD);
+    }
+    return const Color(0xFFF3E5F5);
+  }
+
+  IconData _getIcon(FcmNotification n) {
+    final title = n.title.toLowerCase();
+    if (title.contains('scan') || title.contains('selesai')) {
+      return Icons.document_scanner;
+    }
+    if (title.contains('tip') || title.contains('perawatan')) {
+      return Icons.lightbulb_outline;
+    }
+    if (title.contains('ingat') || title.contains('reminder')) {
+      return Icons.alarm;
+    }
+    return Icons.notifications_outlined;
+  }
+
+  // ── Build ────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          color: AppColors.textDark,
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Notifikasi',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          if (_unreadCount > 0)
-            TextButton(
-              onPressed: _markAllAsRead,
-              child: const Text(
-                'Baca Semua',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryGreenDark,
-                ),
-              ),
-            ),
-        ],
-      ),
-      body: _notifications.isEmpty
-          ? _buildEmptyState()
-          : Column(
-              children: [
-                // Unread count badge
-                if (_unreadCount > 0)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    color: AppColors.surfaceGreen,
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGreen,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '$_unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'notifikasi belum dibaca',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.primaryGreenDark,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+      appBar: _buildAppBar(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _notifications.isEmpty
+            ? _buildEmptyState()
+            : Column(
+                children: [
+                  if (_unreadCount > 0) _buildUnreadBanner(),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _notifications.length,
+                      itemBuilder: (ctx, i) =>
+                          _buildCard(_notifications[i]),
                     ),
                   ),
-                // Notification list
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _notifications.length,
-                    itemBuilder: (context, index) {
-                      return _buildNotificationCard(_notifications[index]);
-                    },
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 
+  // ── App Bar ──────────────────────────────────────────────────
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0.5,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+        color: AppColors.textDark,
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: const Text(
+        'Notifikasi',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textDark,
+        ),
+      ),
+      centerTitle: true,
+      actions: [
+        if (_notifications.isNotEmpty)
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: AppColors.textDark),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) async {
+              if (value == 'read_all') {
+                await FcmService.instance.markAllAsRead();
+              } else if (value == 'clear_all') {
+                _showClearDialog();
+              }
+            },
+            itemBuilder: (_) => [
+              if (_unreadCount > 0)
+                const PopupMenuItem(
+                  value: 'read_all',
+                  child: Row(
+                    children: [
+                      Icon(Icons.done_all, size: 18,
+                          color: AppColors.primaryGreenDark),
+                      SizedBox(width: 10),
+                      Text('Tandai semua dibaca'),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep, size: 18, color: Colors.red),
+                    SizedBox(width: 10),
+                    Text('Hapus semua',
+                        style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  // ── Unread banner ────────────────────────────────────────────
+  Widget _buildUnreadBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      color: AppColors.surfaceGreen,
+      child: Row(
+        children: [
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$_unreadCount',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'notifikasi belum dibaca',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.primaryGreenDark,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => FcmService.instance.markAllAsRead(),
+            child: const Text(
+              'Baca Semua',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryGreenDark,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Empty state ──────────────────────────────────────────────
   Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: AppColors.surfaceGreen,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.notifications_off_outlined,
-              size: 48,
-              color: AppColors.primaryGreen.withOpacity(0.6),
+              size: 52,
+              color: AppColors.primaryGreen.withOpacity(0.55),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           const Text(
-            'Tidak ada notifikasi',
+            'Belum ada notifikasi',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -323,22 +270,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Semua notifikasi kamu akan muncul di sini',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textGray,
-            ),
+            'Notifikasi dari Dermify akan muncul di sini',
+            style: TextStyle(fontSize: 14, color: AppColors.textGray),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNotificationCard(NotificationItem notification) {
+  // ── Notification card ────────────────────────────────────────
+  Widget _buildCard(FcmNotification n) {
     return Dismissible(
-      key: Key(notification.id),
+      key: Key(n.id),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) => _deleteNotification(notification.id),
+      onDismissed: (_) => FcmService.instance.deleteNotification(n.id),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
@@ -350,21 +295,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
       ),
       child: GestureDetector(
-        onTap: () => _markAsRead(notification.id),
-        child: Container(
+        onTap: () => FcmService.instance.markAsRead(n.id),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: notification.isRead
-                ? AppColors.cardLight
+            color: n.isRead
+                ? Colors.white
                 : AppColors.surfaceGreen.withOpacity(0.5),
             borderRadius: BorderRadius.circular(14),
-            border: !notification.isRead
-                ? Border.all(color: AppColors.primaryGreen.withOpacity(0.3), width: 1)
+            border: !n.isRead
+                ? Border.all(
+                    color: AppColors.primaryGreen.withOpacity(0.35), width: 1)
                 : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withOpacity(0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -377,12 +324,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: _getIconBgColor(notification.type),
+                  color: _getBadgeBg(n),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  _getIcon(notification.type),
-                  color: _getIconColor(notification.type),
+                  _getIcon(n),
+                  color: _getBadgeColor(n),
                   size: 22,
                 ),
               ),
@@ -393,21 +340,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
-                            notification.title,
+                            n.title,
                             style: TextStyle(
                               fontSize: 15,
-                              fontWeight: notification.isRead
+                              fontWeight: n.isRead
                                   ? FontWeight.w600
                                   : FontWeight.bold,
                               color: AppColors.textDark,
                             ),
                           ),
                         ),
-                        if (!notification.isRead)
+                        if (!n.isRead)
                           Container(
                             width: 9,
                             height: 9,
@@ -420,7 +366,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      notification.message,
+                      n.body,
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textGray,
@@ -430,13 +376,36 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _formatTimestamp(notification.timestamp),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textGray.withOpacity(0.7),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time_outlined,
+                            size: 11,
+                            color: AppColors.textGray.withOpacity(0.6)),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatTimestamp(n.receivedAt),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textGray.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (!n.isRead) ...[
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () =>
+                                FcmService.instance.markAsRead(n.id),
+                            child: const Text(
+                              'Tandai dibaca',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primaryGreenDark,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -444,6 +413,43 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Confirm clear all dialog ─────────────────────────────────
+  void _showClearDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Hapus semua notifikasi?',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: const Text(
+          'Semua notifikasi akan dihapus secara permanen.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal',
+                style: TextStyle(color: AppColors.textGray)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await FcmService.instance.clearAll();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Hapus'),
+          ),
+        ],
       ),
     );
   }
