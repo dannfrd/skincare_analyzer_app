@@ -3,27 +3,54 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
+import '../utils/network_helper.dart';
 import 'user_session.dart';
 
+/// API Service untuk komunikasi dengan backend
+/// 
+/// Backend menggunakan Multi-Dataset RAG untuk analisis:
+/// 1. OCR text di-extract dan di-clean
+/// 2. Ingredient di-match dengan database MySQL
+/// 3. Context di-retrieve dari 3 dataset:
+///    - Dataset 1: Deskripsi lengkap (1000+ ingredient)
+///    - Dataset 2: Kategori & fungsi (500+ ingredient)
+///    - Dataset 3: BPOM ingredient berbahaya
+/// 4. Data dari 3 dataset di-merge menjadi context lengkap
+/// 5. Gemini AI menganalisis dengan context grounding dari 3 sumber
+/// 6. Expert system memberikan safety scoring
+/// 
+/// Semua proses Multi-Dataset RAG terjadi di backend, Flutter hanya perlu:
+/// - Kirim image/text ke backend
+/// - Terima hasil analisis yang sudah ter-context dari 3 dataset
 class ApiService {
-  static const String _envBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: '',
-  );
+  // Use centralized configuration
+  static String get baseUrl => AppConfig.baseUrl;
 
-  static String get baseUrl {
-    if (_envBaseUrl.trim().isNotEmpty) {
-      return _envBaseUrl.trim();
-    }
-
-    // Android emulator cannot access host localhost directly.
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
-    }
-
-    return 'http://127.0.0.1:8000';
+  /// Test koneksi ke backend
+  static Future<bool> testConnection() async {
+    final result = await NetworkHelper.testBackendConnection(baseUrl);
+    return result['success'] as bool;
   }
 
+  /// Print diagnostics untuk debugging
+  static Future<void> printDiagnostics() async {
+    await NetworkHelper.printNetworkDiagnostics(baseUrl);
+  }
+
+  /// Analyze image menggunakan OCR + Multi-Dataset RAG + AI
+  /// 
+  /// Backend akan:
+  /// 1. Extract text dari image (OCR)
+  /// 2. Clean dan tokenize ingredient
+  /// 3. Match dengan database MySQL
+  /// 4. Retrieve context dari 3 dataset:
+  ///    - Deskripsi lengkap ingredient
+  ///    - Kategori dan fungsi ingredient
+  ///    - BPOM data ingredient berbahaya
+  /// 5. Merge data dari 3 sumber
+  /// 6. Analyze dengan Gemini AI (context-grounded dari 3 dataset)
+  /// 7. Return hasil analisis lengkap dengan warning BPOM jika ada
   static Future<Map<String, dynamic>> analyzeImage(File imageFile) async {
     try {
       var request = http.MultipartRequest(
@@ -61,6 +88,20 @@ class ApiService {
     }
   }
 
+  /// Analyze text ingredient menggunakan Multi-Dataset RAG + AI
+  /// 
+  /// Backend akan:
+  /// 1. Clean dan tokenize ingredient text
+  /// 2. Match dengan database MySQL
+  /// 3. Retrieve context dari 3 dataset (Multi-Dataset RAG):
+  ///    - Dataset 1: Deskripsi lengkap (1000+ ingredient)
+  ///    - Dataset 2: Kategori & fungsi (500+ ingredient)
+  ///    - Dataset 3: BPOM ingredient berbahaya
+  /// 4. Merge data dari 3 sumber untuk context lengkap
+  /// 5. Build prompt dengan context untuk Gemini AI
+  /// 6. Analyze dengan AI yang ter-ground pada 3 dataset
+  /// 7. Expert system scoring
+  /// 8. Return hasil analisis dengan warning BPOM jika ada
   static Future<Map<String, dynamic>> analyzeText(String extractedText) async {
     final text = extractedText.trim();
     if (text.isEmpty) {
