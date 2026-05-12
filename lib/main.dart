@@ -1,19 +1,29 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import 'screens/splash_screen.dart';
-import 'screens/main_navigation.dart';
-import 'screens/scan_screen.dart';
-import 'screens/scan_progress_screen.dart';
+import 'config/app_config.dart';
+import 'screens/connection_test_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
+import 'screens/main_navigation.dart';
 import 'screens/notification_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/scan_progress_screen.dart';
+import 'screens/scan_screen.dart';
+import 'screens/splash_screen.dart';
+import 'services/api_service.dart';
 import 'services/fcm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Print app configuration for debugging
+  AppConfig.printConfig();
+  
+  // Print network diagnostics
+  await ApiService.printDiagnostics();
+  
   await Firebase.initializeApp();
 
   // Daftarkan background FCM handler (wajib sebelum runApp)
@@ -66,6 +76,7 @@ class SkincareAnalyzerApp extends StatelessWidget {
         '/main': (context) => const MainNavigation(),
         '/scan': (context) => const ScanScreen(),
         '/notifications': (context) => const NotificationScreen(),
+        '/connection-test': (context) => const ConnectionTestScreen(),
         // Progress and Results typically get pushed with arguments rather than simple routes
       },
       onGenerateRoute: (settings) {
