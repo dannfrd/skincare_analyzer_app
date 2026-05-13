@@ -57,7 +57,7 @@ class AppConfig {
     // 1. Listen on port 443 (HTTPS) or use reverse proxy (Nginx)
     // 2. Have valid SSL certificate
     // 3. CORS enabled for mobile app
-    return 'https://api.buildwithardan.my.id';
+    return 'http://api.buildwithardan.my.id';
     
     // Fallback options if HTTPS doesn't work:
     // return 'http://api.buildwithardan.my.id';  // HTTP without SSL
@@ -67,7 +67,7 @@ class AppConfig {
   /// Staging URL (if you have a staging server)
   static String get stagingUrl {
     // Use same as production for now, or setup staging subdomain
-    return 'https://api.buildwithardan.my.id';
+    return 'http://api.buildwithardan.my.id';
   }
 
   /// Development URL (local development)
