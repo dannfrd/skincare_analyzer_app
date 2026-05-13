@@ -326,13 +326,27 @@ class ResultScreen extends StatelessWidget {
     final isAllergen = _toBool(ingredient['is_allergen']);
     final notPregnancySafe = _toBool(ingredient['unsafe_for_pregnancy']);
 
+    // Dataset RAG fields
+    final datasetDescription = _asString(ingredient['dataset_description']);
+    final datasetFunctions = _asString(ingredient['dataset_functions']);
+    final datasetWarnings = _asString(ingredient['dataset_warnings']);
+    final datasetOrigin = _asString(ingredient['dataset_origin']);
+    final datasetHarmful = _toBool(ingredient['dataset_harmful']);
+    final datasetBpomWarning = _asString(ingredient['dataset_bpom_warning']);
+    final foundInDataset = _toBool(ingredient['found_in_dataset']);
+
     final unknown = _isUnknown(ingredient);
 
     Color tone = AppColors.primaryGreenDark;
     IconData icon = Icons.check_circle_outline;
     String subtitle = 'Cenderung aman pada penggunaan normal.';
 
-    if (unknown) {
+    // Priority: BPOM warning > pregnancy > allergen > comedogenic > unknown
+    if (datasetHarmful && datasetBpomWarning != null) {
+      tone = const Color(0xFFB42318);
+      icon = Icons.dangerous;
+      subtitle = '🚨 $datasetBpomWarning';
+    } else if (unknown && !foundInDataset) {
       tone = const Color(0xFFB7791F);
       icon = Icons.help_outline;
       subtitle = 'Belum ada kecocokan di dataset.';
@@ -352,17 +366,42 @@ class ResultScreen extends StatelessWidget {
       tone = const Color(0xFFD97706);
       icon = Icons.error_outline;
       subtitle = 'Nilai komedogenik sedang ($comedogenic/5).';
+    } else if (foundInDataset && datasetDescription != null) {
+      // Ingredient found in dataset - show positive message
+      tone = AppColors.primaryGreenDark;
+      icon = Icons.check_circle_outline;
+      subtitle = 'Bahan ditemukan di dataset RAG.';
     }
 
     final details = <String>[];
-    if (status.isNotEmpty && status.toLowerCase() == 'unknown') {
-      details.add('Status: unknown');
+    
+    // Prioritize dataset description over MySQL description
+    if (datasetDescription != null && datasetDescription.isNotEmpty) {
+      details.add('📖 ${_clip(datasetDescription, maxLen: 150)}');
+    } else if (description != null && description.isNotEmpty) {
+      details.add(_clip(description, maxLen: 150));
     }
-    if (function != null && function.isNotEmpty) {
+    
+    // Add dataset functions
+    if (datasetFunctions != null && datasetFunctions.isNotEmpty) {
+      details.add('✨ Fungsi: $datasetFunctions');
+    } else if (function != null && function.isNotEmpty) {
       details.add('Fungsi: $function');
     }
-    if (description != null && description.isNotEmpty) {
-      details.add(_clip(description));
+    
+    // Add dataset warnings
+    if (datasetWarnings != null && datasetWarnings.isNotEmpty) {
+      details.add('⚠️ Perhatian: $datasetWarnings');
+    }
+    
+    // Add origin
+    if (datasetOrigin != null && datasetOrigin.isNotEmpty) {
+      details.add('🌿 Asal: $datasetOrigin');
+    }
+    
+    // Show unknown status only if not found in dataset
+    if (status.isNotEmpty && status.toLowerCase() == 'unknown' && !foundInDataset) {
+      details.add('Status: Tidak ditemukan di database MySQL');
     }
 
     return Container(
