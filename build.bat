@@ -56,7 +56,7 @@ echo ========================================
 echo   PRODUCTION BUILD
 echo ========================================
 echo Environment: Production
-echo Backend: http://api.buildwithardan.my.id
+echo Backend: http://43.156.119.43
 echo.
 call flutter clean
 call flutter pub get
@@ -113,7 +113,7 @@ echo ========================================
 echo   RUN PRODUCTION
 echo ========================================
 echo Environment: Production
-echo Backend: http://api.buildwithardan.my.id
+echo Backend: http://43.156.119.43
 echo.
 call flutter run --dart-define=ENV=production
 pause
