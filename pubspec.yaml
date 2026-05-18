@@ -38,6 +38,7 @@ dependencies:
   http: ^1.6.0
   google_fonts: ^8.0.2
   image_cropper: ^11.0.0
+  image: ^4.2.0
   dio: ^5.9.2
   flutter_tesseract_ocr: ^0.4.30
   path_provider: ^2.1.5

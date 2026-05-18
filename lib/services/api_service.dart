@@ -51,13 +51,36 @@ class ApiService {
   /// 5. Merge data dari 3 sumber
   /// 6. Analyze dengan Gemini AI (context-grounded dari 3 dataset)
   /// 7. Return hasil analisis lengkap dengan warning BPOM jika ada
-  static Future<Map<String, dynamic>> analyzeImage(File imageFile) async {
+  static Future<Map<String, dynamic>> analyzeImage(
+    File imageFile, {
+    String? productName,
+    String? productBrand,
+    String? productCategory,
+  }) async {
     try {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse('$baseUrl/analyze-image'),
       );
-      request.headers.addAll(UserSession.authHeaders);
+
+      final token = UserSession.token;
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      final name = productName?.trim();
+      final brand = productBrand?.trim();
+      final category = productCategory?.trim();
+
+      if (name != null && name.isNotEmpty) {
+        request.fields['product_name'] = name;
+      }
+      if (brand != null && brand.isNotEmpty) {
+        request.fields['product_brand'] = brand;
+      }
+      if (category != null && category.isNotEmpty) {
+        request.fields['product_category'] = category;
+      }
 
       request.files.add(
         await http.MultipartFile.fromPath('file', imageFile.path),
@@ -102,7 +125,12 @@ class ApiService {
   /// 6. Analyze dengan AI yang ter-ground pada 3 dataset
   /// 7. Expert system scoring
   /// 8. Return hasil analisis dengan warning BPOM jika ada
-  static Future<Map<String, dynamic>> analyzeText(String extractedText) async {
+  static Future<Map<String, dynamic>> analyzeText(
+    String extractedText, {
+    String? productName,
+    String? productBrand,
+    String? productCategory,
+  }) async {
     final text = extractedText.trim();
     if (text.isEmpty) {
       throw Exception(
@@ -110,12 +138,27 @@ class ApiService {
       );
     }
 
+    final payload = <String, dynamic>{'text': text};
+    final name = productName?.trim();
+    final brand = productBrand?.trim();
+    final category = productCategory?.trim();
+
+    if (name != null && name.isNotEmpty) {
+      payload['product_name'] = name;
+    }
+    if (brand != null && brand.isNotEmpty) {
+      payload['product_brand'] = brand;
+    }
+    if (category != null && category.isNotEmpty) {
+      payload['product_category'] = category;
+    }
+
     try {
       final response = await http
           .post(
             Uri.parse('$baseUrl/analyze'),
             headers: UserSession.authHeaders,
-            body: jsonEncode({'text': text}),
+            body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 90));
 
