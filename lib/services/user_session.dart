@@ -21,14 +21,6 @@ class UserSession {
   static String? _userProvider;
   static String? _userCreatedAt;
 
-  /// Save session after a successful login / register response.
-  /// Expected [data] shape from backend:
-  /// ```json
-  /// {
-  ///   "access_token": "...",
-  ///   "user": { "id": 1, "name": "...", "email": "...", ... }
-  /// }
-  /// ```
   static Future<void> saveSession(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
 
