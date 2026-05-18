@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
 class OcrService {
@@ -14,19 +15,26 @@ class OcrService {
 
     try {
       final tessDataRoot = await _prepareTessData();
-      final text = await _channel.invokeMethod<String>('extractText', {
-        'imagePath': imageFile.path,
-        'tessData': tessDataRoot,
-        'language': 'eng',
-        'args': {'psm': '6', 'preserve_interword_spaces': '1'},
-      });
+      final processedFile = await _prepareImageForOcr(imageFile);
 
-      final cleaned = (text ?? '').trim();
-      if (cleaned.isEmpty) {
+      final candidates = <String>[];
+      candidates.add(await _runOcr(processedFile, tessDataRoot, psm: '6'));
+
+      if (_looksWeak(candidates.first)) {
+        candidates.add(await _runOcr(processedFile, tessDataRoot, psm: '11'));
+        candidates.add(await _runOcr(processedFile, tessDataRoot, psm: '4'));
+      }
+
+      if (processedFile.path != imageFile.path) {
+        candidates.add(await _runOcr(imageFile, tessDataRoot, psm: '6'));
+      }
+
+      final best = _pickBest(candidates);
+      if (best.trim().isEmpty) {
         throw Exception('OCR did not detect any text in the image.');
       }
 
-      return cleaned;
+      return best.trim();
     } on MissingPluginException catch (e) {
       throw Exception(
         'OCR native plugin is unavailable on this platform/build: $e',
@@ -36,6 +44,92 @@ class OcrService {
     } catch (e) {
       throw Exception('Failed to run on-device OCR: $e');
     }
+  }
+
+  static Future<String> _runOcr(
+    File imageFile,
+    String tessDataRoot, {
+    required String psm,
+  }) async {
+    final text = await _channel.invokeMethod<String>('extractText', {
+      'imagePath': imageFile.path,
+      'tessData': tessDataRoot,
+      'language': 'eng',
+      'args': {
+        'psm': psm,
+        'preserve_interword_spaces': '1',
+      },
+    });
+
+    return (text ?? '').trim();
+  }
+
+  static Future<File> _prepareImageForOcr(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) {
+        return imageFile;
+      }
+
+      final targetWidth = decoded.width < 1400 ? 1400 : decoded.width;
+      final resized = img.copyResize(
+        decoded,
+        width: targetWidth,
+        interpolation: img.Interpolation.cubic,
+      );
+
+      final grayscale = img.grayscale(resized);
+      final enhanced = img.adjustColor(
+        grayscale,
+        contrast: 1.2,
+        brightness: 0.05,
+      );
+
+      final tempDir = await getTemporaryDirectory();
+      final output = File(
+        '${tempDir.path}/ocr_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await output.writeAsBytes(img.encodePng(enhanced));
+      return output;
+    } catch (_) {
+      return imageFile;
+    }
+  }
+
+  static bool _looksWeak(String text) {
+    final cleaned = text.trim();
+    if (cleaned.length < 20) {
+      return true;
+    }
+    final alphaCount = RegExp(r'[A-Za-z]').allMatches(cleaned).length;
+    final digitCount = RegExp(r'[0-9]').allMatches(cleaned).length;
+    return (alphaCount + digitCount) < 12;
+  }
+
+  static String _pickBest(List<String> candidates) {
+    var best = '';
+    var bestScore = -1;
+
+    for (final candidate in candidates) {
+      final score = _scoreText(candidate);
+      if (score > bestScore) {
+        bestScore = score;
+        best = candidate;
+      }
+    }
+
+    return best;
+  }
+
+  static int _scoreText(String text) {
+    final cleaned = text.trim();
+    if (cleaned.isEmpty) return 0;
+
+    final words = cleaned.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final alphaCount = RegExp(r'[A-Za-z]').allMatches(cleaned).length;
+    final digitCount = RegExp(r'[0-9]').allMatches(cleaned).length;
+    return words * 10 + alphaCount + digitCount;
   }
 
   static Future<String> _prepareTessData() async {
