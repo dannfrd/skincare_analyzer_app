@@ -3,6 +3,7 @@ import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/scan_payload.dart';
 import 'package:skincare_analyzer_app/screens/result_screen.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
+import 'package:skincare_analyzer_app/services/ocr_service.dart';
 
 class ScanProgressScreen extends StatefulWidget {
   final ScanPayload payload;
@@ -30,12 +31,16 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
     setState(() => _currentStep = 1); // Extracting Text
 
     try {
+      final extractedText = await OcrService.extractText(
+        widget.payload.imageFile,
+      );
+
       if (!mounted) return;
       setState(() => _currentStep = 2); // AI analysis
 
-      // Stage 2: Send image directly to backend OCR + analysis
-      final result = await ApiService.analyzeImage(
-        widget.payload.imageFile,
+      // Stage 3: Send extracted text to backend analysis endpoint
+      final result = await ApiService.analyzeText(
+        extractedText,
         productName: widget.payload.productName,
         productBrand: widget.payload.productBrand,
         productCategory: widget.payload.productCategory,
@@ -142,7 +147,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                       _currentStep == 0
                           ? 'Image Processing'
                           : _currentStep == 1
-                          ? 'Uploading Image'
+                          ? 'OCR Text Extraction'
                           : 'AI Ingredient Analysis',
                       style: const TextStyle(
                         fontSize: 16,
@@ -157,7 +162,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                           _currentStep == 0
                               ? 'Optimizing image quality...'
                               : _currentStep == 1
-                              ? 'Sending image to server...'
+                              ? 'Reading text on device...'
                               : 'Analyzing safely...',
                           style: const TextStyle(
                             color: AppColors.primaryGreenDark,
@@ -204,7 +209,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                     _buildStepLineContainer(isActive: _currentStep >= 1),
                     _buildStepRow(
                       icon: Icons.sync,
-                      title: 'Backend OCR',
+                      title: 'OCR Text Extraction',
                       subtitle: _currentStep >= 2
                           ? 'Completed'
                           : (_currentStep == 1 ? 'In Progress' : 'Upcoming'),

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/scan_payload.dart';
@@ -35,7 +34,10 @@ class _ScanScreenState extends State<ScanScreen> {
     setState(() => _isCameraOpening = true);
 
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 100,
+      );
       if (!mounted) return;
 
       if (image != null) {
@@ -59,7 +61,10 @@ class _ScanScreenState extends State<ScanScreen> {
 
   Future<void> _pickFromGallery() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
+      );
       if (image != null) {
         if (!mounted) return;
         setState(() {
@@ -86,40 +91,6 @@ class _ScanScreenState extends State<ScanScreen> {
         context,
         '/progress',
         arguments: payload,
-      );
-    }
-  }
-
-  Future<void> _cropImage() async {
-    if (_capturedImage == null) return;
-
-    try {
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: _capturedImage!.path,
-        compressQuality: 95,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Ingredients',
-            toolbarColor: AppColors.primaryGreen,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false,
-          ),
-          IOSUiSettings(
-            title: 'Crop Ingredients',
-          ),
-        ],
-      );
-
-      if (cropped != null && mounted) {
-        setState(() {
-          _capturedImage = File(cropped.path);
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal crop gambar: $e')),
       );
     }
   }
@@ -229,27 +200,9 @@ class _ScanScreenState extends State<ScanScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Crop, Retake & Gallery Row
+                // Retake & Gallery Row
                 Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _cropImage,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryGreenDark,
-                          side: const BorderSide(
-                              color: AppColors.primaryGreenDark, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(Icons.crop, size: 20),
-                        label: const Text('Crop',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _openCamera,
@@ -287,6 +240,15 @@ class _ScanScreenState extends State<ScanScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Tip: Isi frame dengan teks ingredients, hindari glare, dan foto dari jarak dekat.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 12,
+                  ),
                 ),
               ],
 
