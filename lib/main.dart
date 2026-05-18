@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'config/app_config.dart';
+import 'models/scan_payload.dart';
 import 'screens/connection_test_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation.dart';
@@ -81,9 +84,20 @@ class SkincareAnalyzerApp extends StatelessWidget {
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/progress') {
-          final imageFile = settings.arguments as dynamic; // File
+          final args = settings.arguments;
+          ScanPayload? payload;
+
+          if (args is ScanPayload) {
+            payload = args;
+          } else if (args is File) {
+            payload = ScanPayload(imageFile: args);
+          }
+
+          if (payload == null) {
+            return null;
+          }
           return MaterialPageRoute(
-            builder: (context) => ScanProgressScreen(imageFile: imageFile),
+            builder: (context) => ScanProgressScreen(payload: payload!),
           );
         }
         return null;

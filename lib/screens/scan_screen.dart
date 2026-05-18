@@ -1,7 +1,10 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/models/scan_payload.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -14,6 +17,9 @@ class _ScanScreenState extends State<ScanScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _capturedImage;
   bool _isCameraOpening = false;
+  final TextEditingController _productNameController = TextEditingController();
+  final TextEditingController _productBrandController = TextEditingController();
+  final TextEditingController _productCategoryController = TextEditingController();
 
   @override
   void initState() {
@@ -70,12 +76,60 @@ class _ScanScreenState extends State<ScanScreen> {
 
   void _proceedToAnalysis() {
     if (_capturedImage != null) {
+      final payload = ScanPayload(
+        imageFile: _capturedImage!,
+        productName: _productNameController.text,
+        productBrand: _productBrandController.text,
+        productCategory: _productCategoryController.text,
+      );
       Navigator.pushReplacementNamed(
         context,
         '/progress',
-        arguments: _capturedImage,
+        arguments: payload,
       );
     }
+  }
+
+  Future<void> _cropImage() async {
+    if (_capturedImage == null) return;
+
+    try {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: _capturedImage!.path,
+        compressQuality: 95,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Ingredients',
+            toolbarColor: AppColors.primaryGreen,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false,
+          ),
+          IOSUiSettings(
+            title: 'Crop Ingredients',
+          ),
+        ],
+      );
+
+      if (cropped != null && mounted) {
+        setState(() {
+          _capturedImage = File(cropped.path);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal crop gambar: $e')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _productNameController.dispose();
+    _productBrandController.dispose();
+    _productCategoryController.dispose();
+    super.dispose();
   }
 
   @override
@@ -147,6 +201,8 @@ class _ScanScreenState extends State<ScanScreen> {
 
               // Action Buttons
               if (_capturedImage != null) ...[
+                _buildProductForm(),
+                const SizedBox(height: 16),
                 // Analyze Button
                 SizedBox(
                   width: double.infinity,
@@ -173,9 +229,27 @@ class _ScanScreenState extends State<ScanScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Retake & Gallery Row
+                // Crop, Retake & Gallery Row
                 Row(
                   children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _cropImage,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryGreenDark,
+                          side: const BorderSide(
+                              color: AppColors.primaryGreenDark, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.crop, size: 20),
+                        label: const Text('Crop',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _openCamera,
@@ -246,6 +320,111 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProductForm() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Product Info (Optional)',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildProductField(
+            controller: _productNameController,
+            label: 'Product Name',
+            hint: 'e.g. Hydrating Toner',
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildProductField(
+                  controller: _productBrandController,
+                  label: 'Brand',
+                  hint: 'e.g. Somethinc',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildProductField(
+                  controller: _productCategoryController,
+                  label: 'Category',
+                  hint: 'e.g. Toner',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textGray,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 13,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.primaryGreen),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
