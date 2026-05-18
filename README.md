@@ -54,9 +54,9 @@ flutter build apk --release --dart-define=API_BASE_URL=http://your-url:8000
 ## 🌐 Backend Configuration
 
 ### Production
-- URL: `https://api.buildwithardan.my.id`
+- URL: `http://api.buildwithardan.my.id`
 - Environment: `production`
-- Protocol: HTTPS
+- Protocol: HTTP
 
 ### Development
 - Android Emulator: `http://10.0.2.2:8000`
@@ -117,7 +117,7 @@ File `.env.example` tersedia sebagai template. Copy ke `.env` dan sesuaikan:
 
 ```env
 ENV=production
-API_BASE_URL=https://api.buildwithardan.my.id
+API_BASE_URL=http://api.buildwithardan.my.id
 ```
 
 ## 📱 Output
