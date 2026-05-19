@@ -23,10 +23,56 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   void initState() {
     super.initState();
-    // Automatically open camera when screen loads
+    // Prompt user to pick image source when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _openCamera();
+      _showImageSourceActionSheet();
     });
+  }
+
+  void _showImageSourceActionSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Select Image Source',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
+                  title: const Text('Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openCamera();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library, color: AppColors.primaryGreen),
+                  title: const Text('Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickFromGallery();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openCamera() async {
@@ -46,9 +92,8 @@ class _ScanScreenState extends State<ScanScreen> {
           _isCameraOpening = false;
         });
       } else {
-        // User cancelled the camera, go back
+        // User cancelled the camera
         setState(() => _isCameraOpening = false);
-        Navigator.pop(context);
       }
     } catch (e) {
       if (!mounted) return;
@@ -140,7 +185,7 @@ class _ScanScreenState extends State<ScanScreen> {
               Expanded(
                 child: _capturedImage != null
                     ? _buildImagePreview()
-                    : _buildLoadingState(),
+                    : _buildEmptyState(),
               ),
 
               const SizedBox(height: 24),
@@ -148,8 +193,8 @@ class _ScanScreenState extends State<ScanScreen> {
               // Title & Subtitle
               Text(
                 _capturedImage != null
-                    ? 'Photo Captured'
-                    : 'Opening Camera...',
+                    ? 'Photo Selected'
+                    : 'Select Image',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -161,7 +206,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 child: Text(
                   _capturedImage != null
                       ? 'Review your photo below, then analyze or retake.'
-                      : 'Please allow camera access to scan product labels.',
+                      : 'Please select an image source to scan product labels.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: AppColors.textGray, fontSize: 13),
@@ -390,7 +435,7 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -400,24 +445,62 @@ class _ScanScreenState extends State<ScanScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
-            ),
+          Icon(
+            Icons.image_search,
+            size: 64,
+            color: AppColors.primaryGreen.withOpacity(0.5),
           ),
           const SizedBox(height: 20),
           const Text(
-            'Launching Camera...',
+            'No Image Selected',
             style: TextStyle(
               color: AppColors.primaryGreenDark,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 8),
+          const Text(
+            'Choose a source to continue',
+            style: TextStyle(
+              color: AppColors.textGray,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _openCamera,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.camera_alt, size: 20),
+                label: const Text('Camera', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: _pickFromGallery,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.primaryGreen,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                  ),
+                ),
+                icon: const Icon(Icons.photo_library, size: 20),
+                label: const Text('Gallery', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          )
         ],
       ),
     );
