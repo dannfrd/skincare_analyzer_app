@@ -318,11 +318,11 @@ class _ScanScreenState extends State<ScanScreen> {
           // Subtle green border overlay
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primaryGreen.withOpacity(0.6),
+                color: AppColors.primaryGreen.withOpacity(0.3),
                 width: 2,
               ),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ],
@@ -339,7 +339,7 @@ class _ScanScreenState extends State<ScanScreen> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -352,7 +352,7 @@ class _ScanScreenState extends State<ScanScreen> {
             'Product Info (Optional)',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.bold,
               color: AppColors.textDark,
             ),
           ),
@@ -369,7 +369,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 child: _buildProductField(
                   controller: _productBrandController,
                   label: 'Brand',
-                  hint: 'e.g. Somethinc',
+                  hint: 'e.g. Skintific',
                 ),
               ),
               const SizedBox(width: 10),
@@ -400,7 +400,7 @@ class _ScanScreenState extends State<ScanScreen> {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColors.textGray,
+            color: AppColors.textDark,
           ),
         ),
         const SizedBox(height: 6),
@@ -418,15 +418,15 @@ class _ScanScreenState extends State<ScanScreen> {
               vertical: 12,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: AppColors.primaryGreen),
             ),
           ),
@@ -446,22 +446,23 @@ class _ScanScreenState extends State<ScanScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.image_search,
-            size: 64,
+            Icons.document_scanner_outlined,
+            size: 48,
             color: AppColors.primaryGreen.withOpacity(0.5),
           ),
           const SizedBox(height: 20),
           const Text(
-            'No Image Selected',
+            'Scan Product Label',
             style: TextStyle(
-              color: AppColors.primaryGreenDark,
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Choose a source to continue',
+            'Use your camera or upload an image\nto analyze skincare ingredients.',
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textGray,
               fontSize: 14,
@@ -473,31 +474,32 @@ class _ScanScreenState extends State<ScanScreen> {
             children: [
               ElevatedButton.icon(
                 onPressed: _openCamera,
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Camera'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  backgroundColor: AppColors.primaryGreen,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
-                icon: const Icon(Icons.camera_alt, size: 20),
-                label: const Text('Camera', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
                 onPressed: _pickFromGallery,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Gallery'),
+                style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryGreen,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  side: const BorderSide(color: AppColors.primaryGreen),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
                   ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
-                icon: const Icon(Icons.photo_library, size: 20),
-                label: const Text('Gallery', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           )
