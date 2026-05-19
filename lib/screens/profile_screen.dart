@@ -213,12 +213,6 @@ class ProfileScreen extends StatelessWidget {
                           }
                         },
                       ),
-                      Divider(height: 1, indent: 56, color: Colors.grey.shade100),
-                      _buildMenuItem(
-                        icon: Icons.settings_outlined,
-                        title: 'Settings',
-                        onTap: () {},
-                      ),
                     ],
                   ),
                 ),

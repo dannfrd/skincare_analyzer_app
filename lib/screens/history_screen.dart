@@ -57,7 +57,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       
       final List<ScanHistoryItem> parsedItems = historyData.map((e) {
         final product = e['product'] ?? {};
-        final analysis = e['analyses'] is List && e['analyses'].isNotEmpty ? e['analyses'][0] : {};
+        final analysis = e['analyses'] is List && e['analyses'].isNotEmpty ? e['analyses'][0] : e;
         
         // Try to guess risk level based on info or default to safe
         String riskStr = 'safe';
@@ -67,8 +67,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
         return ScanHistoryItem(
           analysisId: _toInt(e['analysis_id']) ?? _toInt(analysis['id']),
-          productName: product['name'] ?? 'Unknown Product',
-          brand: product['brand'] ?? 'Unknown Brand',
+          productName: product['name'] ?? e['product_name'] ?? 'Unknown Product',
+          brand: product['brand'] ?? e['product_brand'] ?? 'Unknown Brand',
           date: e['created_at'] != null 
               ? e['created_at'].toString().split('T')[0] 
               : 'Unknown Date',
@@ -159,6 +159,46 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       final mergedData = Map<String, dynamic>.from(detail);
       mergedData.putIfAbsent('analysis_id', () => mergedData['id']);
+      
+      // Jika data berasala dari skema lama (JSON utuh disimpan di ai_analysis)
+      if (mergedData['ai_analysis'] is Map && mergedData['ai_analysis']['expert_analysis'] != null) {
+        final payload = Map<String, dynamic>.from(mergedData['ai_analysis']);
+        mergedData.addAll(payload);
+      }
+      
+      // Jika data berasal dari skema baru (tabel analyses), rekonstruksi untuk ResultScreen
+      if (mergedData['expert_analysis'] == null) {
+        List<Map<String, dynamic>> flags = [];
+        int unknownCount = 0;
+        final matchedIngredients = detail['matched_ingredients'] is List ? detail['matched_ingredients'] : [];
+        
+        for (var ing in matchedIngredients) {
+          final risk = ing['risk']?.toString() ?? '';
+          if (risk.isNotEmpty && risk != 'No specific risk flagged') {
+            flags.add({
+              'ingredient': ing['name'],
+              'message': risk,
+            });
+          }
+        }
+        
+        mergedData['expert_analysis'] = {
+          'warnings_found': flags.length,
+          'total_ingredients_identified': matchedIngredients.length,
+          'total_unknown': unknownCount,
+          'flags': flags,
+          'unknown_list': [],
+        };
+      }
+      
+      if (mergedData['ai_analysis'] == null || mergedData['ai_analysis'] is! Map || mergedData['ai_analysis']['text'] == null) {
+        mergedData['ai_analysis'] = {
+          'text': mergedData['recommendation'] ?? mergedData['summary'],
+          'model': 'Dataset RAG',
+          'models_tried': [],
+        };
+      }
+
       _openResultScreen(mergedData);
     } catch (e) {
       if (!mounted) return;
