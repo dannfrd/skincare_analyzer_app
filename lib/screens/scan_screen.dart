@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/scan_payload.dart';
 
@@ -88,9 +89,9 @@ class _ScanScreenState extends State<ScanScreen> {
 
       if (image != null) {
         setState(() {
-          _capturedImage = File(image.path);
           _isCameraOpening = false;
         });
+        await _cropImage(image.path);
       } else {
         // User cancelled the camera
         setState(() => _isCameraOpening = false);
@@ -111,15 +112,46 @@ class _ScanScreenState extends State<ScanScreen> {
         imageQuality: 100,
       );
       if (image != null) {
-        if (!mounted) return;
-        setState(() {
-          _capturedImage = File(image.path);
-        });
+        await _cropImage(image.path);
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error selecting image: $e')),
+      );
+    }
+  }
+
+  Future<void> _cropImage(String path) async {
+    try {
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: path,
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 100,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Image',
+            toolbarColor: AppColors.primaryGreen,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false,
+          ),
+          IOSUiSettings(
+            title: 'Crop Image',
+          ),
+        ],
+      );
+
+      if (croppedFile != null) {
+        if (!mounted) return;
+        setState(() {
+          _capturedImage = File(croppedFile.path);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error cropping image: $e')),
       );
     }
   }
