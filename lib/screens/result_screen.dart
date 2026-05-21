@@ -841,17 +841,22 @@ class ResultScreen extends StatelessWidget {
     Map<String, dynamic> aiAnalysis,
     String fallbackRecommendation,
   ) {
+    String? rawText;
+
     final modelOutput = _asString(aiAnalysis['model_output']);
     if (modelOutput != null && modelOutput.isNotEmpty) {
-      return modelOutput;
+      rawText = modelOutput;
+    } else {
+      final text = _asString(aiAnalysis['text']);
+      if (text != null && text.isNotEmpty) {
+        rawText = text;
+      } else {
+        rawText = fallbackRecommendation;
+      }
     }
 
-    final text = _asString(aiAnalysis['text']);
-    if (text != null && text.isNotEmpty) {
-      return text;
-    }
-
-    return fallbackRecommendation;
+    // Menghilangkan simbol markdown seperti **, *, #, dan ` agar rapi dibaca
+    return rawText.replaceAll(RegExp(r'\*\*|\*|#|`'), '');
   }
 
   static List<String> _splitAiInsight(String text) {
