@@ -1,5 +1,5 @@
 name: skincare_analyzer_app
-description: "A new Flutter project."
+description: "Skincare Analyzer App is a mobile application that helps users analyze their skincare products by scanning the ingredients list. It provides insights into the potential benefits and risks of the ingredients, allowing users to make informed decisions about their skincare routine."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -59,6 +59,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -103,3 +104,12 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Configuration for flutter_launcher_icons. Put your source icon at
+# `assets/images/dermify_logo.png` then run:
+#   flutter pub get
+#   flutter pub run flutter_launcher_icons:main
+flutter_icons:
+  android: true
+  ios: true
+  image_path: assets/images/dermify_logo.png
