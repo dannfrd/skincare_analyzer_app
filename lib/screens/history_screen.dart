@@ -10,7 +10,6 @@ class ScanHistoryItem {
   final String productName;
   final String brand;
   final String date;
-  final String riskLevel; // 'safe', 'moderate', 'high'
   final String summary;
   final String recommendation;
   final Color imageColor;
@@ -21,7 +20,6 @@ class ScanHistoryItem {
     required this.productName,
     required this.brand,
     required this.date,
-    required this.riskLevel,
     required this.summary,
     required this.recommendation,
     required this.imageColor,
@@ -59,12 +57,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final product = e['product'] ?? {};
         final analysis = e['analyses'] is List && e['analyses'].isNotEmpty ? e['analyses'][0] : e;
         
-        // Try to guess risk level based on info or default to safe
-        String riskStr = 'safe';
-        if (analysis['risk_level'] != null) {
-          riskStr = analysis['risk_level'].toString().toLowerCase();
-        }
-
         return ScanHistoryItem(
           analysisId: _toInt(e['analysis_id']) ?? _toInt(analysis['id']),
           productName: product['name'] ?? e['product_name'] ?? 'Unknown Product',
@@ -72,7 +64,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
           date: e['created_at'] != null 
               ? e['created_at'].toString().split('T')[0] 
               : 'Unknown Date',
-          riskLevel: riskStr,
           summary: analysis['summary']?.toString() ?? 'Ringkasan analisis belum tersedia.',
           recommendation: analysis['recommendation']?.toString() ?? 'Belum ada rekomendasi tambahan.',
           imageColor: const Color(0xFFD6EAF0),
@@ -117,7 +108,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       'summary': item.summary,
       'recommendation': item.recommendation,
       'expert_analysis': {
-        'warnings_found': item.riskLevel == 'safe' ? 0 : 1,
+        'warnings_found': 0,
         'total_ingredients_identified': 0,
         'total_unknown': 0,
         'flags': const [],
@@ -180,6 +171,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               'message': risk,
             });
           }
+          ing['dataset_description'] = ing['benefit'];
+          ing['dataset_functions'] = ing['function'];
+          ing['dataset_warnings'] = risk != 'No specific risk flagged' ? risk : null;
+          ing['found_in_dataset'] = true;
         }
         
         mergedData['expert_analysis'] = {
@@ -212,12 +207,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<ScanHistoryItem> get _filteredItems {
     List<ScanHistoryItem> items = _allItems;
 
-    // Apply filter
-    if (_selectedFilter == 'Safe') {
-      items = items.where((item) => item.riskLevel == 'safe').toList();
-    } else if (_selectedFilter == 'Risky') {
-      items = items.where((item) => item.riskLevel != 'safe').toList();
-    }
+    // Filter chips removed
 
     // Apply search
     if (_searchQuery.isNotEmpty) {
@@ -254,9 +244,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 20),
                   // Search Bar
                   _buildSearchBar(),
-                  const SizedBox(height: 16),
-                  // Filter Chips
-                  _buildFilterChips(),
                 ],
               ),
             ),
@@ -361,55 +348,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildFilterChips() {
-    final filters = ['All', 'Safe', 'Risky'];
-    return Row(
-      children: filters.map((filter) {
-        final isSelected = _selectedFilter == filter;
-        return Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedFilter = filter;
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryGreen : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isSelected ? AppColors.primaryGreen : Colors.grey.shade300,
-                  width: 1.2,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.25),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Text(
-                filter,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppColors.textDark,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
   Widget _buildHistoryCard(ScanHistoryItem item, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -469,8 +407,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            _buildRiskBadge(item.riskLevel),
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -533,53 +469,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
           item.imageIcon,
           size: 32,
           color: isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black.withValues(alpha: 0.35),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRiskBadge(String riskLevel) {
-    Color bgColor;
-    Color textColor;
-    String label;
-
-    switch (riskLevel) {
-      case 'safe':
-        bgColor = const Color(0xFFE8F6EA);
-        textColor = const Color(0xFF2E7D32);
-        label = 'SAFE';
-        break;
-      case 'moderate':
-        bgColor = const Color(0xFFFFF3E0);
-        textColor = const Color(0xFFE65100);
-        label = 'MODERATE\nRISK';
-        break;
-      case 'high':
-        bgColor = const Color(0xFFFFEBEE);
-        textColor = const Color(0xFFC62828);
-        label = 'HIGH\nRISK';
-        break;
-      default:
-        bgColor = Colors.grey.shade100;
-        textColor = Colors.grey;
-        label = 'UNKNOWN';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: textColor,
-          height: 1.3,
-          letterSpacing: 0.3,
         ),
       ),
     );
