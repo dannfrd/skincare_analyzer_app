@@ -99,8 +99,7 @@ class ResultScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     _buildIngredientSection(matchedIngredients),
-                    const SizedBox(height: 14),
-                    _buildFlagSection(flags),
+
                     if (unknownIngredients.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       _buildUnknownIngredientSection(unknownIngredients),
@@ -193,7 +192,7 @@ class ResultScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Ringkasan Berbasis Dataset',
+            'Ringkasan Analisis',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -213,10 +212,6 @@ class ResultScreen extends StatelessWidget {
               _buildMetricChip(
                 icon: Icons.science,
                 text: '$identifiedCount bahan dikenali',
-              ),
-              _buildMetricChip(
-                icon: Icons.warning_amber_rounded,
-                text: '$warningCount warning',
               ),
               _buildMetricChip(
                 icon: Icons.help_outline,
