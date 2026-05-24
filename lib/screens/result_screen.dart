@@ -99,8 +99,7 @@ class ResultScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     _buildIngredientSection(matchedIngredients),
-                    const SizedBox(height: 14),
-                    _buildFlagSection(flags),
+
                     if (unknownIngredients.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       _buildUnknownIngredientSection(unknownIngredients),
@@ -193,7 +192,7 @@ class ResultScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Ringkasan Berbasis Dataset',
+            'Ringkasan Analisis',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -213,10 +212,6 @@ class ResultScreen extends StatelessWidget {
               _buildMetricChip(
                 icon: Icons.science,
                 text: '$identifiedCount bahan dikenali',
-              ),
-              _buildMetricChip(
-                icon: Icons.warning_amber_rounded,
-                text: '$warningCount warning',
               ),
               _buildMetricChip(
                 icon: Icons.help_outline,
@@ -841,17 +836,22 @@ class ResultScreen extends StatelessWidget {
     Map<String, dynamic> aiAnalysis,
     String fallbackRecommendation,
   ) {
+    String? rawText;
+
     final modelOutput = _asString(aiAnalysis['model_output']);
     if (modelOutput != null && modelOutput.isNotEmpty) {
-      return modelOutput;
+      rawText = modelOutput;
+    } else {
+      final text = _asString(aiAnalysis['text']);
+      if (text != null && text.isNotEmpty) {
+        rawText = text;
+      } else {
+        rawText = fallbackRecommendation;
+      }
     }
 
-    final text = _asString(aiAnalysis['text']);
-    if (text != null && text.isNotEmpty) {
-      return text;
-    }
-
-    return fallbackRecommendation;
+    // Menghilangkan simbol markdown seperti **, *, #, dan ` agar rapi dibaca
+    return rawText.replaceAll(RegExp(r'\*\*|\*|#|`'), '');
   }
 
   static List<String> _splitAiInsight(String text) {
