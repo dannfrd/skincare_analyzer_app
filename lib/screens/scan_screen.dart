@@ -6,6 +6,23 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/scan_payload.dart';
 
+const List<String> _kProductCategories = [
+  'Toner',
+  'Serum',
+  'Moisturizer',
+  'Sunscreen',
+  'Cleanser',
+  'Exfoliator',
+  'Eye Cream',
+  'Lip Care',
+  'Mask',
+  'Body Lotion',
+  'Body Wash',
+  'Essence',
+  'Primer',
+  'BB / CC Cream',
+];
+
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
 
@@ -19,12 +36,15 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _isCameraOpening = false;
   final TextEditingController _productNameController = TextEditingController();
   final TextEditingController _productBrandController = TextEditingController();
-  final TextEditingController _productCategoryController = TextEditingController();
+  final TextEditingController _productCategoryController =
+      TextEditingController();
+
+  String? _selectedCategory;
+  bool _showManualCategory = false;
 
   @override
   void initState() {
     super.initState();
-    // Prompt user to pick image source when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showImageSourceActionSheet();
     });
@@ -44,7 +64,7 @@ class _ScanScreenState extends State<ScanScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Select Image Source',
+                  'Pilih Sumber Gambar',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -53,16 +73,20 @@ class _ScanScreenState extends State<ScanScreen> {
                 ),
                 const SizedBox(height: 20),
                 ListTile(
-                  leading: const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
-                  title: const Text('Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                  leading:
+                      const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
+                  title: const Text('Kamera',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(context);
                     _openCamera();
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library, color: AppColors.primaryGreen),
-                  title: const Text('Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                  leading: const Icon(Icons.photo_library,
+                      color: AppColors.primaryGreen),
+                  title: const Text('Galeri',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(context);
                     _pickFromGallery();
@@ -79,29 +103,23 @@ class _ScanScreenState extends State<ScanScreen> {
   Future<void> _openCamera() async {
     if (_isCameraOpening) return;
     setState(() => _isCameraOpening = true);
-
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 100,
       );
       if (!mounted) return;
-
       if (image != null) {
-        setState(() {
-          _isCameraOpening = false;
-        });
+        setState(() => _isCameraOpening = false);
         await _cropImage(image.path);
       } else {
-        // User cancelled the camera
         setState(() => _isCameraOpening = false);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isCameraOpening = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error opening camera: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error membuka kamera: $e')));
     }
   }
 
@@ -111,14 +129,11 @@ class _ScanScreenState extends State<ScanScreen> {
         source: ImageSource.gallery,
         imageQuality: 100,
       );
-      if (image != null) {
-        await _cropImage(image.path);
-      }
+      if (image != null) await _cropImage(image.path);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error selecting image: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error memilih gambar: $e')));
     }
   }
 
@@ -130,46 +145,48 @@ class _ScanScreenState extends State<ScanScreen> {
         compressQuality: 100,
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: 'Crop Image',
+            toolbarTitle: 'Crop Gambar',
             toolbarColor: AppColors.primaryGreen,
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
           ),
-          IOSUiSettings(
-            title: 'Crop Image',
-          ),
+          IOSUiSettings(title: 'Crop Gambar'),
         ],
       );
-
-      if (croppedFile != null) {
-        if (!mounted) return;
-        setState(() {
-          _capturedImage = File(croppedFile.path);
-        });
+      if (croppedFile != null && mounted) {
+        setState(() => _capturedImage = File(croppedFile.path));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cropping image: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error crop gambar: $e')));
     }
   }
 
+  void _onCategoryChipSelected(String category) {
+    setState(() {
+      if (category == 'Lainnya...') {
+        _showManualCategory = true;
+        _selectedCategory = 'Lainnya...';
+        _productCategoryController.clear();
+      } else {
+        _showManualCategory = false;
+        _selectedCategory = category;
+        _productCategoryController.text = category;
+      }
+    });
+  }
+
   void _proceedToAnalysis() {
-    if (_capturedImage != null) {
-      final payload = ScanPayload(
-        imageFile: _capturedImage!,
-        productName: _productNameController.text,
-        productBrand: _productBrandController.text,
-        productCategory: _productCategoryController.text,
-      );
-      Navigator.pushReplacementNamed(
-        context,
-        '/progress',
-        arguments: payload,
-      );
-    }
+    if (_capturedImage == null) return;
+    final payload = ScanPayload(
+      imageFile: _capturedImage!,
+      productName: _productNameController.text,
+      productBrand: _productBrandController.text,
+      productCategory: _productCategoryController.text,
+    );
+    Navigator.pushReplacementNamed(context, '/progress', arguments: payload);
   }
 
   @override
@@ -202,7 +219,7 @@ class _ScanScreenState extends State<ScanScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline, color: AppColors.textDark),
-            onPressed: () {},
+            onPressed: _showScanTips,
           ),
         ],
       ),
@@ -212,46 +229,33 @@ class _ScanScreenState extends State<ScanScreen> {
           child: Column(
             children: [
               const SizedBox(height: 16),
-
-              // Image Preview Area
               Expanded(
                 child: _capturedImage != null
                     ? _buildImagePreview()
                     : _buildEmptyState(),
               ),
-
-              const SizedBox(height: 24),
-
-              // Title & Subtitle
+              const SizedBox(height: 20),
               Text(
-                _capturedImage != null
-                    ? 'Photo Selected'
-                    : 'Select Image',
+                _capturedImage != null ? 'Foto Dipilih' : 'Pilih Gambar',
                 style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                    fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
                   _capturedImage != null
-                      ? 'Review your photo below, then analyze or retake.'
-                      : 'Please select an image source to scan product labels.',
+                      ? 'Tinjau foto di atas, isi info produk, lalu mulai analisis.'
+                      : 'Pilih sumber gambar untuk memindai label produk skincare.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: AppColors.textGray, fontSize: 13),
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Action Buttons
+              const SizedBox(height: 20),
               if (_capturedImage != null) ...[
                 _buildProductForm(),
-                const SizedBox(height: 16),
-                // Analyze Button
+                const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -261,23 +265,17 @@ class _ScanScreenState extends State<ScanScreen> {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
                     icon: const Icon(Icons.science),
                     label: const Text(
-                      'Analyze Ingredients',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      'Analisis Bahan',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-
-                // Retake & Gallery Row
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
@@ -287,17 +285,16 @@ class _ScanScreenState extends State<ScanScreen> {
                           foregroundColor: AppColors.primaryGreen,
                           side: const BorderSide(
                               color: AppColors.primaryGreen, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.camera_alt, size: 20),
-                        label: const Text('Retake',
+                        icon: const Icon(Icons.camera_alt, size: 18),
+                        label: const Text('Ulangi',
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _pickFromGallery,
@@ -305,31 +302,29 @@ class _ScanScreenState extends State<ScanScreen> {
                           foregroundColor: AppColors.textDark,
                           side: BorderSide(
                               color: Colors.grey.shade300, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         icon: const Icon(Icons.photo_library_outlined,
-                            size: 20),
-                        label: const Text('Gallery',
+                            size: 18),
+                        label: const Text('Galeri',
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
-                  'Tip: Isi frame dengan teks ingredients, hindari glare, dan foto dari jarak dekat.',
+                  '💡 Tip: Foto dekat bagian "Ingredients / Komposisi", hindari pantulan cahaya.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 12,
-                  ),
+                      color: Colors.grey.shade500,
+                      fontSize: 11.5,
+                      height: 1.4),
                 ),
               ],
-
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -343,15 +338,11 @@ class _ScanScreenState extends State<ScanScreen> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.file(
-            _capturedImage!,
-            fit: BoxFit.cover,
-          ),
-          // Subtle green border overlay
+          Image.file(_capturedImage!, fit: BoxFit.cover),
           Container(
             decoration: BoxDecoration(
               border: Border.all(
-                color: AppColors.primaryGreen.withOpacity(0.3),
+                color: AppColors.primaryGreen.withValues(alpha: 0.3),
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(16),
@@ -371,7 +362,7 @@ class _ScanScreenState extends State<ScanScreen> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -380,42 +371,102 @@ class _ScanScreenState extends State<ScanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Product Info (Optional)',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 10),
-          _buildProductField(
-            controller: _productNameController,
-            label: 'Product Name',
-            hint: 'e.g. Hydrating Toner',
-          ),
-          const SizedBox(height: 10),
-          Row(
+          const Row(
             children: [
-              Expanded(
-                child: _buildProductField(
-                  controller: _productBrandController,
-                  label: 'Brand',
-                  hint: 'e.g. Skintific',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildProductField(
-                  controller: _productCategoryController,
-                  label: 'Category',
-                  hint: 'e.g. Toner',
-                ),
+              Icon(Icons.info_outline,
+                  size: 15, color: AppColors.primaryGreenDark),
+              SizedBox(width: 6),
+              Text(
+                'Info Produk (Opsional)',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          _buildProductField(
+            controller: _productNameController,
+            label: 'Nama Produk',
+            hint: 'cth. Acne Moisturizer',
+            icon: Icons.spa_outlined,
+          ),
+          const SizedBox(height: 10),
+          _buildProductField(
+            controller: _productBrandController,
+            label: 'Brand',
+            hint: 'cth. Skintific',
+            icon: Icons.storefront_outlined,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Kategori',
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textDark),
+          ),
+          const SizedBox(height: 8),
+          _buildCategoryChips(),
+          if (_showManualCategory) ...[
+            const SizedBox(height: 10),
+            _buildProductField(
+              controller: _productCategoryController,
+              label: 'Ketik kategori lainnya',
+              hint: 'cth. Hair Tonic',
+              icon: Icons.edit_outlined,
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    final categories = [..._kProductCategories, 'Lainnya...'];
+    return Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      children: categories.map((cat) {
+        final isSelected = _selectedCategory == cat;
+        final isOther = cat == 'Lainnya...';
+        return GestureDetector(
+          onTap: () => _onCategoryChipSelected(cat),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? (isOther
+                      ? const Color(0xFFF0F4FF)
+                      : AppColors.primaryGreen.withValues(alpha: 0.12))
+                  : const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? (isOther
+                        ? const Color(0xFF3B82F6)
+                        : AppColors.primaryGreenDark)
+                    : Colors.grey.shade300,
+                width: isSelected ? 1.5 : 1,
+              ),
+            ),
+            child: Text(
+              cat,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? (isOther
+                        ? const Color(0xFF1D4ED8)
+                        : AppColors.primaryGreenDark)
+                    : AppColors.textGray,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -423,6 +474,7 @@ class _ScanScreenState extends State<ScanScreen> {
     required TextEditingController controller,
     required String label,
     required String hint,
+    required IconData icon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,36 +482,33 @@ class _ScanScreenState extends State<ScanScreen> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textDark,
-          ),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textDark),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 5),
         TextField(
           controller: controller,
           textInputAction: TextInputAction.next,
+          style: const TextStyle(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 13,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
+            prefixIcon: Icon(icon, size: 17, color: AppColors.textGray),
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(9),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(9),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.primaryGreen),
+              borderRadius: BorderRadius.circular(9),
+              borderSide:
+                  const BorderSide(color: AppColors.primaryGreen, width: 1.5),
             ),
           ),
         ),
@@ -479,26 +528,22 @@ class _ScanScreenState extends State<ScanScreen> {
         children: [
           Icon(
             Icons.document_scanner_outlined,
-            size: 48,
-            color: AppColors.primaryGreen.withOpacity(0.5),
+            size: 56,
+            color: AppColors.primaryGreen.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 20),
           const Text(
-            'Scan Product Label',
+            'Scan Label Produk',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Use your camera or upload an image\nto analyze skincare ingredients.',
+            'Gunakan kamera atau pilih gambar\nuntuk menganalisis bahan skincare.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textGray,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textGray, fontSize: 13),
           ),
           const SizedBox(height: 24),
           Row(
@@ -507,13 +552,12 @@ class _ScanScreenState extends State<ScanScreen> {
               ElevatedButton.icon(
                 onPressed: _openCamera,
                 icon: const Icon(Icons.camera_alt),
-                label: const Text('Camera'),
+                label: const Text('Kamera'),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: AppColors.primaryGreen,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                      borderRadius: BorderRadius.circular(12)),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
@@ -522,21 +566,93 @@ class _ScanScreenState extends State<ScanScreen> {
               OutlinedButton.icon(
                 onPressed: _pickFromGallery,
                 icon: const Icon(Icons.photo_library),
-                label: const Text('Gallery'),
+                label: const Text('Galeri'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryGreen,
                   side: const BorderSide(color: AppColors.primaryGreen),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                      borderRadius: BorderRadius.circular(12)),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
+    );
+  }
+
+  void _showScanTips() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.tips_and_updates, color: AppColors.primaryGreenDark),
+            SizedBox(width: 8),
+            Text('Tips Scan', style: TextStyle(fontSize: 17)),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _TipItem(
+              icon: Icons.crop_free,
+              text: 'Pastikan bagian "Ingredients / Komposisi" memenuhi frame.',
+            ),
+            SizedBox(height: 8),
+            _TipItem(
+              icon: Icons.wb_sunny_outlined,
+              text: 'Hindari pantulan cahaya / glare pada kemasan.',
+            ),
+            SizedBox(height: 8),
+            _TipItem(
+              icon: Icons.center_focus_strong_outlined,
+              text: 'Foto dari jarak dekat (10–20 cm) agar teks tajam.',
+            ),
+            SizedBox(height: 8),
+            _TipItem(
+              icon: Icons.crop,
+              text: 'Gunakan fitur crop untuk memotong bagian ingredients saja.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mengerti',
+                style: TextStyle(color: AppColors.primaryGreenDark)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TipItem extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _TipItem({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: AppColors.primaryGreenDark),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+                fontSize: 13, color: AppColors.textDark, height: 1.4),
+          ),
+        ),
+      ],
     );
   }
 }
