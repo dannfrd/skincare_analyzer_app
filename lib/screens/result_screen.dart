@@ -4,11 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   final Map<String, dynamic> analysisData;
   final File? imageFile;
 
   const ResultScreen({super.key, required this.analysisData, this.imageFile});
+
+  @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  bool _isSaving = false;
+
+  Map<String, dynamic> get analysisData => widget.analysisData;
+  File? get imageFile => widget.imageFile;
 
   @override
   Widget build(BuildContext context) {
@@ -865,26 +875,7 @@ class ResultScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () async {
-                final analysisId = _toInt(analysisData['analysis_id']) ?? 0;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Menyimpan hasil ke histori...')),
-                );
-                if (analysisId > 0) {
-                  await ApiService.saveAnalysisHistory(analysisId);
-                }
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Berhasil disimpan di Histori!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  Navigator.pushNamedAndRemoveUntil(
-                      context, '/main', (route) => false);
-                }
-              },
+              onPressed: _isSaving ? null : _saveResult,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 foregroundColor: Colors.white,
@@ -894,10 +885,22 @@ class ResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(13),
                 ),
               ),
-              icon: const Icon(Icons.bookmark_added_outlined),
-              label: const Text(
-                'Simpan Hasil',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.bookmark_added_outlined),
+              label: Text(
+                _isSaving ? 'Menyimpan...' : 'Simpan Hasil',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -916,6 +919,44 @@ class ResultScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _saveResult() async {
+    final analysisId = _toInt(analysisData['analysis_id']);
+    if (analysisId == null || analysisId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Hasil belum tersimpan di database. Silakan ulangi analisis.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    final saved = await ApiService.saveAnalysisHistory(analysisId);
+    if (!mounted) return;
+
+    setState(() => _isSaving = false);
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menyimpan hasil ke histori. Silakan coba lagi.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Berhasil disimpan di Histori!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
   }
 
   // ─── Helpers ───────────────────────────────────────────
