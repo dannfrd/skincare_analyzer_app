@@ -1,4 +1,6 @@
 @echo off
+setlocal
+cd /d "%~dp0"
 title Skincare Analyzer - Build Tool
 color 0A
 
@@ -40,8 +42,12 @@ echo Environment: Development
 echo Backend: Local (10.0.2.2:8000 for emulator)
 echo.
 call flutter clean
+if errorlevel 1 goto build_failed
 call flutter pub get
+if errorlevel 1 goto build_failed
 call flutter build apk --debug --dart-define=ENV=dev
+if errorlevel 1 goto build_failed
+if not exist "build\app\outputs\flutter-apk\app-debug.apk" goto apk_missing
 echo.
 echo ========================================
 echo Build selesai!
@@ -59,8 +65,12 @@ echo Environment: Production
 echo Backend: http://43.156.119.43
 echo.
 call flutter clean
+if errorlevel 1 goto build_failed
 call flutter pub get
+if errorlevel 1 goto build_failed
 call flutter build apk --release --dart-define=ENV=production
+if errorlevel 1 goto build_failed
+if not exist "build\app\outputs\flutter-apk\app-release.apk" goto apk_missing
 echo.
 echo ========================================
 echo Build selesai!
@@ -85,8 +95,12 @@ echo.
 echo Building dengan URL: %custom_url%
 echo.
 call flutter clean
+if errorlevel 1 goto build_failed
 call flutter pub get
+if errorlevel 1 goto build_failed
 call flutter build apk --release --dart-define=API_BASE_URL=%custom_url%
+if errorlevel 1 goto build_failed
+if not exist "build\app\outputs\flutter-apk\app-release.apk" goto apk_missing
 echo.
 echo ========================================
 echo Build selesai!
@@ -126,8 +140,33 @@ echo   CLEAN PROJECT
 echo ========================================
 echo.
 call flutter clean
+if errorlevel 1 goto clean_failed
 echo.
 echo Project berhasil dibersihkan!
+echo ========================================
+pause
+goto menu
+
+:build_failed
+echo.
+echo ========================================
+echo BUILD GAGAL. Periksa pesan error Flutter di atas.
+echo ========================================
+pause
+goto menu
+
+:apk_missing
+echo.
+echo ========================================
+echo BUILD GAGAL. Flutter tidak menghasilkan file APK.
+echo ========================================
+pause
+goto menu
+
+:clean_failed
+echo.
+echo ========================================
+echo CLEAN GAGAL. Periksa pesan error Flutter di atas.
 echo ========================================
 pause
 goto menu
@@ -137,4 +176,5 @@ cls
 echo.
 echo Terima kasih!
 timeout /t 2
-exit
+endlocal
+exit /b
