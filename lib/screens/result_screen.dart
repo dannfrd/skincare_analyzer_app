@@ -4,11 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   final Map<String, dynamic> analysisData;
   final File? imageFile;
 
   const ResultScreen({super.key, required this.analysisData, this.imageFile});
+
+  @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  bool _isSaving = false;
+
+  Map<String, dynamic> get analysisData => widget.analysisData;
+  File? get imageFile => widget.imageFile;
 
   @override
   Widget build(BuildContext context) {
@@ -18,23 +28,23 @@ class ResultScreen extends StatelessWidget {
     final unknownIngredients = _asStringList(expertAnalysis['unknown_list']);
     final aiAnalysis = _asMap(analysisData['ai_analysis']);
 
-    final warningCount =
-        _toInt(expertAnalysis['warnings_found']) ?? flags.length;
     final identifiedCount =
         _toInt(expertAnalysis['total_ingredients_identified']) ??
         matchedIngredients.where((item) => !_isUnknown(item)).length;
     final unknownCount =
         _toInt(expertAnalysis['total_unknown']) ?? unknownIngredients.length;
+    final warningCount =
+        _toInt(expertAnalysis['warnings_found']) ?? flags.length;
+
     final summary =
-        _asString(analysisData['summary']) ??
-        'Ringkasan analisis belum tersedia.';
+        _asString(analysisData['summary']) ?? 'Ringkasan analisis belum tersedia.';
     final recommendation =
-        _asString(analysisData['recommendation']) ??
-        'Belum ada rekomendasi tambahan.';
+        _asString(analysisData['recommendation']) ?? 'Belum ada rekomendasi tambahan.';
 
     final aiText = _resolveAiText(aiAnalysis, recommendation);
-    final aiInsightItems = _splitAiInsight(aiText);
-    final modelUsed = _asString(aiAnalysis['model']) ?? '-';
+    final modelUsed = _asString(aiAnalysis['model_used']) ??
+        _asString(aiAnalysis['model']) ??
+        '-';
     final modelsTried = _asStringList(aiAnalysis['models_tried']);
 
     return Scaffold(
@@ -51,6 +61,8 @@ class ResultScreen extends StatelessWidget {
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: 0.3,
           ),
         ),
         centerTitle: true,
@@ -60,7 +72,7 @@ class ResultScreen extends StatelessWidget {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -68,45 +80,34 @@ class ResultScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     _buildOverviewCard(
                       identifiedCount: identifiedCount,
-                      warningCount: warningCount,
                       unknownCount: unknownCount,
+                      warningCount: warningCount,
                     ),
                     const SizedBox(height: 14),
                     _buildSectionCard(
                       title: 'Ringkasan Cepat',
-                      icon: Icons.insights,
+                      icon: Icons.insights_rounded,
                       child: Text(
                         summary,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 14.5,
                           color: AppColors.textDark,
-                          height: 1.45,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildSectionCard(
-                      title: 'Saran Pemakaian',
-                      icon: Icons.health_and_safety,
-                      child: Text(
-                        recommendation,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textDark,
-                          height: 1.45,
+                          height: 1.55,
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
                     _buildIngredientSection(matchedIngredients),
-
                     if (unknownIngredients.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       _buildUnknownIngredientSection(unknownIngredients),
                     ],
+                    if (flags.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _buildFlagSection(flags),
+                    ],
                     const SizedBox(height: 14),
                     _buildAiSection(
-                      aiInsightItems: aiInsightItems,
                       aiText: aiText,
                       modelUsed: modelUsed,
                       modelsTried: modelsTried,
@@ -129,7 +130,7 @@ class ResultScreen extends StatelessWidget {
         children: [
           SizedBox(
             width: double.infinity,
-            height: 190,
+            height: 185,
             child: imageFile != null
                 ? Image.file(imageFile!, fit: BoxFit.cover)
                 : Container(
@@ -141,24 +142,48 @@ class ResultScreen extends StatelessWidget {
                     ),
                   ),
           ),
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: 12,
+          Positioned.fill(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.48),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                'Analisis berbasis OCR + AI + RAG dataset ingredients',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC000000)],
+                  stops: [0.45, 1.0],
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            left: 14,
+            right: 14,
+            bottom: 14,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreenDark.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome, size: 12, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'OCR + AI + RAG',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -168,8 +193,8 @@ class ResultScreen extends StatelessWidget {
 
   Widget _buildOverviewCard({
     required int identifiedCount,
-    required int warningCount,
     required int unknownCount,
+    required int warningCount,
   }) {
     return Container(
       width: double.infinity,
@@ -177,7 +202,7 @@ class ResultScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryGreen.withValues(alpha: 0.16),
+            AppColors.primaryGreen.withValues(alpha: 0.13),
             AppColors.cardLight,
           ],
           begin: Alignment.topLeft,
@@ -185,7 +210,7 @@ class ResultScreen extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppColors.primaryGreenDark.withValues(alpha: 0.3),
+          color: AppColors.primaryGreenDark.withValues(alpha: 0.25),
         ),
       ),
       child: Column(
@@ -194,29 +219,42 @@ class ResultScreen extends StatelessWidget {
           const Text(
             'Ringkasan Analisis',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w800,
               color: AppColors.textDark,
+              letterSpacing: 0.2,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           const Text(
-            'Hasil dirangkum dari pencocokan ingredient + insight AI dengan RAG.',
-            style: TextStyle(fontSize: 13, color: AppColors.textGray),
+            'Berdasarkan pencocokan bahan + analisis AI',
+            style: TextStyle(fontSize: 12.5, color: AppColors.textGray),
           ),
           const SizedBox(height: 14),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 9,
+            runSpacing: 9,
             children: [
               _buildMetricChip(
-                icon: Icons.science,
+                icon: Icons.science_rounded,
                 text: '$identifiedCount bahan dikenali',
+                color: AppColors.primaryGreenDark,
+                bgColor: const Color(0xFFE8F5E9),
               ),
-              _buildMetricChip(
-                icon: Icons.help_outline,
-                text: '$unknownCount belum dikenali',
-              ),
+              if (unknownCount > 0)
+                _buildMetricChip(
+                  icon: Icons.help_outline_rounded,
+                  text: '$unknownCount belum dikenali',
+                  color: const Color(0xFFB7791F),
+                  bgColor: const Color(0xFFFFF8E1),
+                ),
+              if (warningCount > 0)
+                _buildMetricChip(
+                  icon: Icons.warning_amber_rounded,
+                  text: '$warningCount perlu perhatian',
+                  color: const Color(0xFFB42318),
+                  bgColor: const Color(0xFFFFF0F0),
+                ),
             ],
           ),
         ],
@@ -224,25 +262,30 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricChip({required IconData icon, required String text}) {
+  Widget _buildMetricChip({
+    required IconData icon,
+    required String text,
+    required Color color,
+    required Color bgColor,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.cardLight,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: const Color(0xFFDDE5DF)),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.primaryGreenDark),
+          Icon(icon, size: 15, color: color),
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textDark,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
           ),
         ],
@@ -254,7 +297,9 @@ class ResultScreen extends StatelessWidget {
     required String title,
     required IconData icon,
     required Widget child,
+    Color? accentColor,
   }) {
+    final color = accentColor ?? AppColors.primaryGreenDark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -274,19 +319,27 @@ class ResultScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 19, color: AppColors.primaryGreenDark),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 16, color: color),
+              ),
+              const SizedBox(width: 10),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 15.5,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
+                  letterSpacing: 0.1,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           child,
         ],
       ),
@@ -297,7 +350,7 @@ class ResultScreen extends StatelessWidget {
     if (ingredients.isEmpty) {
       return _buildSectionCard(
         title: 'Bahan Terdeteksi',
-        icon: Icons.list_alt,
+        icon: Icons.list_alt_rounded,
         child: const Text(
           'Belum ada bahan yang terdeteksi dari hasil scan.',
           style: TextStyle(fontSize: 14, color: AppColors.textGray),
@@ -307,7 +360,7 @@ class ResultScreen extends StatelessWidget {
 
     return _buildSectionCard(
       title: 'Bahan Terdeteksi (${ingredients.length})',
-      icon: Icons.list_alt,
+      icon: Icons.list_alt_rounded,
       child: Column(children: ingredients.map(_buildIngredientTile).toList()),
     );
   }
@@ -316,12 +369,10 @@ class ResultScreen extends StatelessWidget {
     final name = _asString(ingredient['name']) ?? 'Unnamed ingredient';
     final function = _asString(ingredient['function']);
     final description = _asString(ingredient['description']);
-    final status = _asString(ingredient['status']) ?? '';
     final comedogenic = _toInt(ingredient['comedogenic_rating']) ?? 0;
     final isAllergen = _toBool(ingredient['is_allergen']);
     final notPregnancySafe = _toBool(ingredient['unsafe_for_pregnancy']);
 
-    // Dataset RAG fields
     final datasetDescription = _asString(ingredient['dataset_description']);
     final datasetFunctions = _asString(ingredient['dataset_functions']);
     final datasetWarnings = _asString(ingredient['dataset_warnings']);
@@ -329,83 +380,66 @@ class ResultScreen extends StatelessWidget {
     final datasetHarmful = _toBool(ingredient['dataset_harmful']);
     final datasetBpomWarning = _asString(ingredient['dataset_bpom_warning']);
     final foundInDataset = _toBool(ingredient['found_in_dataset']);
-
     final unknown = _isUnknown(ingredient);
 
     Color tone = AppColors.primaryGreenDark;
-    IconData icon = Icons.check_circle_outline;
-    String subtitle = 'Cenderung aman pada penggunaan normal.';
+    IconData icon = Icons.check_circle_outline_rounded;
+    String statusLabel = 'Aman untuk pemakaian normal';
 
-    // Priority: BPOM warning > pregnancy > allergen > comedogenic > unknown
     if (datasetHarmful && datasetBpomWarning != null) {
       tone = const Color(0xFFB42318);
-      icon = Icons.dangerous;
-      subtitle = '🚨 $datasetBpomWarning';
+      icon = Icons.dangerous_rounded;
+      statusLabel = '🚨 $datasetBpomWarning';
     } else if (unknown && !foundInDataset) {
       tone = const Color(0xFFB7791F);
-      icon = Icons.help_outline;
-      subtitle = 'Belum ada kecocokan di dataset.';
+      icon = Icons.help_outline_rounded;
+      statusLabel = 'Belum ada data di dataset';
     } else if (notPregnancySafe) {
       tone = const Color(0xFFB42318);
-      icon = Icons.pregnant_woman;
-      subtitle = 'Perlu perhatian khusus untuk ibu hamil.';
+      icon = Icons.pregnant_woman_rounded;
+      statusLabel = 'Perhatian khusus untuk ibu hamil';
     } else if (isAllergen) {
       tone = const Color(0xFFB42318);
       icon = Icons.warning_amber_rounded;
-      subtitle = 'Ditandai sebagai potensi alergen/iritan.';
+      statusLabel = 'Potensi alergen / iritan';
     } else if (comedogenic >= 4) {
       tone = const Color(0xFFB42318);
-      icon = Icons.error_outline;
-      subtitle = 'Nilai komedogenik tinggi ($comedogenic/5).';
+      icon = Icons.error_outline_rounded;
+      statusLabel = 'Komedogenik tinggi ($comedogenic/5)';
     } else if (comedogenic == 3) {
       tone = const Color(0xFFD97706);
-      icon = Icons.error_outline;
-      subtitle = 'Nilai komedogenik sedang ($comedogenic/5).';
-    } else if (foundInDataset && datasetDescription != null) {
-      // Ingredient found in dataset - show positive message
+      icon = Icons.error_outline_rounded;
+      statusLabel = 'Komedogenik sedang ($comedogenic/5)';
+    } else if (foundInDataset) {
       tone = AppColors.primaryGreenDark;
-      icon = Icons.check_circle_outline;
-      subtitle = 'Bahan ditemukan di dataset RAG.';
+      icon = Icons.check_circle_outline_rounded;
+      statusLabel = 'Bahan ditemukan di dataset';
     }
 
-    final details = <String>[];
-    
-    // Prioritize dataset description over MySQL description
+    final details = <_DetailItem>[];
     if (datasetDescription != null && datasetDescription.isNotEmpty) {
-      details.add('📖 ${_clip(datasetDescription, maxLen: 150)}');
+      details.add(_DetailItem('📖', _clip(datasetDescription, maxLen: 160)));
     } else if (description != null && description.isNotEmpty) {
-      details.add(_clip(description, maxLen: 150));
+      details.add(_DetailItem('📖', _clip(description, maxLen: 160)));
     }
-    
-    // Add dataset functions
-    if (datasetFunctions != null && datasetFunctions.isNotEmpty) {
-      details.add('✨ Fungsi: $datasetFunctions');
-    } else if (function != null && function.isNotEmpty) {
-      details.add('Fungsi: $function');
-    }
-    
-    // Add dataset warnings
     if (datasetWarnings != null && datasetWarnings.isNotEmpty) {
-      details.add('⚠️ Perhatian: $datasetWarnings');
+      details.add(_DetailItem('⚠️', datasetWarnings));
     }
-    
-    // Add origin
     if (datasetOrigin != null && datasetOrigin.isNotEmpty) {
-      details.add('🌿 Asal: $datasetOrigin');
+      details.add(_DetailItem('🌿', 'Asal: $datasetOrigin'));
     }
-    
-    // Show unknown status only if not found in dataset
-    if (status.isNotEmpty && status.toLowerCase() == 'unknown' && !foundInDataset) {
-      details.add('Status: Tidak ditemukan di database MySQL');
-    }
+
+    final funcLabel = (datasetFunctions?.isNotEmpty == true)
+        ? datasetFunctions!
+        : ((function?.isNotEmpty == true) ? function! : null);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAF8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: tone.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: tone.withValues(alpha: 0.22)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,7 +447,7 @@ class ResultScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.14),
+              color: tone.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: tone, size: 18),
@@ -426,31 +460,63 @@ class ResultScreen extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textDark,
+                    letterSpacing: 0.1,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
-                  subtitle,
+                  statusLabel,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     color: tone,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (funcLabel != null && funcLabel.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 4,
+                    children: funcLabel
+                        .split(RegExp(r'[,;|]'))
+                        .map((f) => f.trim())
+                        .where((f) => f.isNotEmpty)
+                        .take(4)
+                        .map(
+                          (f) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              f,
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: AppColors.primaryGreenDark,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
                 if (details.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   ...details.map(
                     (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
+                      padding: const EdgeInsets.only(bottom: 3),
                       child: Text(
-                        item,
+                        '${item.emoji} ${item.text}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textGray,
-                          height: 1.35,
+                          height: 1.4,
                         ),
                       ),
                     ),
@@ -465,28 +531,18 @@ class ResultScreen extends StatelessWidget {
   }
 
   Widget _buildFlagSection(List<Map<String, dynamic>> flags) {
-    if (flags.isEmpty) {
-      return _buildSectionCard(
-        title: 'Perlu Perhatian',
-        icon: Icons.warning_amber_rounded,
-        child: const Text(
-          'Tidak ada warning signifikan terdeteksi dari rule-based analysis.',
-          style: TextStyle(fontSize: 14, color: AppColors.textGray),
-        ),
-      );
-    }
-
     return _buildSectionCard(
       title: 'Perlu Perhatian (${flags.length})',
       icon: Icons.warning_amber_rounded,
+      accentColor: const Color(0xFFD97706),
       child: Column(
         children: flags.map((flag) {
           final ingredient = _asString(flag['ingredient']) ?? '-';
           final message =
-              _asString(flag['message']) ?? 'Warning detail tidak tersedia.';
+              _asString(flag['message']) ?? 'Detail warning tidak tersedia.';
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: const EdgeInsets.only(bottom: 9),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF7ED),
@@ -497,11 +553,11 @@ class ResultScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(
-                  Icons.error_outline,
+                  Icons.error_outline_rounded,
                   color: Color(0xFFD97706),
-                  size: 20,
+                  size: 19,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,7 +565,7 @@ class ResultScreen extends StatelessWidget {
                       Text(
                         ingredient,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
                         ),
@@ -536,127 +592,121 @@ class ResultScreen extends StatelessWidget {
 
   Widget _buildUnknownIngredientSection(List<String> unknownIngredients) {
     return _buildSectionCard(
-      title: 'Bahan Belum Dikenali',
-      icon: Icons.help_center,
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: unknownIngredients
-            .map(
-              (item) => Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEA),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0xFFF9E19A)),
-                ),
-                child: Text(
-                  item,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9A6700),
-                    fontWeight: FontWeight.w600,
+      title: 'Bahan Belum Dikenali (${unknownIngredients.length})',
+      icon: Icons.help_center_rounded,
+      accentColor: const Color(0xFFB7791F),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Bahan-bahan ini tidak ditemukan di dataset kami. Kemungkinan nama INCI atau bahan lokal yang kurang umum.',
+            style: TextStyle(
+              fontSize: 12.5,
+              color: AppColors.textGray,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: unknownIngredients
+                .map(
+                  (item) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEA),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: const Color(0xFFF9E19A)),
+                    ),
+                    child: Text(
+                      item,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF9A6700),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            )
-            .toList(),
+                )
+                .toList(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildAiSection({
-    required List<String> aiInsightItems,
     required String aiText,
     required String modelUsed,
     required List<String> modelsTried,
   }) {
+    final sections = _parseMarkdownSections(aiText);
+
     return _buildSectionCard(
       title: 'Insight AI + RAG',
-      icon: Icons.auto_awesome,
+      icon: Icons.auto_awesome_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 7,
+            runSpacing: 7,
             children: [
-              _buildSoftChip('Model: $modelUsed'),
-              _buildSoftChip('RAG source: ingredientsList.csv'),
-              if (modelsTried.isNotEmpty)
-                _buildSoftChip('Fallback: ${modelsTried.join(' -> ')}'),
+              _buildSoftChip(
+                  Icons.memory_rounded, 'Model: $modelUsed', const Color(0xFF4A6FA5)),
+              _buildSoftChip(
+                  Icons.dataset_rounded, 'Sumber: RAG Dataset', AppColors.primaryGreenDark),
             ],
           ),
-          const SizedBox(height: 10),
-          if (aiInsightItems.isEmpty)
+          const SizedBox(height: 14),
+          if (sections.isEmpty)
             const Text(
               'Insight AI belum tersedia.',
               style: TextStyle(fontSize: 14, color: AppColors.textGray),
             )
           else
-            ...aiInsightItems
-                .take(7)
-                .map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 7),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(top: 6),
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryGreenDark,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 9),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textDark,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+            ...sections.map((s) => _buildMarkdownBlock(s)),
           const SizedBox(height: 6),
           Theme(
             data: ThemeData(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.zero,
               childrenPadding: EdgeInsets.zero,
-              title: const Text(
-                'Lihat analisis AI lengkap',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryGreenDark,
-                ),
+              title: const Row(
+                children: [
+                  Icon(Icons.unfold_more_rounded,
+                      size: 15, color: AppColors.primaryGreenDark),
+                  SizedBox(width: 6),
+                  Text(
+                    'Lihat analisis AI lengkap',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryGreenDark,
+                    ),
+                  ),
+                ],
               ),
               children: [
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(13),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF6FAF6),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(
+                        color: AppColors.primaryGreenDark.withValues(alpha: 0.15)),
                   ),
                   child: Text(
                     aiText,
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textDark,
-                      height: 1.45,
+                      height: 1.55,
                     ),
                   ),
                 ),
@@ -668,20 +718,141 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSoftChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F7F1),
-        borderRadius: BorderRadius.circular(999),
+  List<_MarkdownSection> _parseMarkdownSections(String text) {
+    if (text.trim().isEmpty) return [];
+    final normalized = text
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .trim();
+
+    // Match numbered section headers: "1) Title" or "1. Title"
+    final sectionRegex = RegExp(r'(^|\n)(\d+[).]\s+[^\n]+)');
+    final matches = sectionRegex.allMatches(normalized).toList();
+
+    if (matches.isEmpty) {
+      return [_MarkdownSection(heading: null, body: normalized)];
+    }
+
+    final sections = <_MarkdownSection>[];
+    for (int i = 0; i < matches.length; i++) {
+      final headingRaw = matches[i].group(2)!.trim();
+      final heading = headingRaw.replaceFirst(RegExp(r'^\d+[).]\s*'), '');
+      final bodyStart = matches[i].end;
+      final bodyEnd =
+          i + 1 < matches.length ? matches[i + 1].start : normalized.length;
+      final body = normalized.substring(bodyStart, bodyEnd).trim();
+      sections.add(_MarkdownSection(heading: heading, body: body));
+    }
+    return sections;
+  }
+
+  Widget _buildMarkdownBlock(_MarkdownSection section) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (section.heading != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Text(
+                section.heading!,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGreenDark,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ),
+            const SizedBox(height: 7),
+          ],
+          ...section.body
+              .split('\n')
+              .map((line) => line.trim())
+              .where((line) => line.isNotEmpty)
+              .map((line) {
+            final isBullet = line.startsWith('-') ||
+                line.startsWith('*') ||
+                line.startsWith('•');
+            final displayText =
+                isBullet ? line.replaceFirst(RegExp(r'^[-*•]\s*'), '') : line;
+            final clean = displayText.replaceAll(RegExp(r'\*\*'), '');
+
+            if (isBullet) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 7),
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreenDark.withValues(alpha: 0.7),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        clean,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          color: AppColors.textDark,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                clean,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.textDark,
+                  height: 1.55,
+                ),
+              ),
+            );
+          }),
+        ],
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 11,
-          color: AppColors.primaryGreenDark,
-          fontWeight: FontWeight.w600,
-        ),
+    );
+  }
+
+  Widget _buildSoftChip(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -695,7 +866,7 @@ class ResultScreen extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             offset: const Offset(0, -4),
-            blurRadius: 10,
+            blurRadius: 12,
           ),
         ],
       ),
@@ -704,47 +875,36 @@ class ResultScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () async {
-                final analysisId = _toInt(analysisData['analysis_id']) ?? 0;
-                
-                // Show loading snackbar
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Menyimpan hasil ke histori...')),
-                );
-
-                if (analysisId > 0) {
-                  await ApiService.saveAnalysisHistory(analysisId);
-                }
-
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Berhasil disimpan di Histori!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  // Return to main layout and force history refresh (we navigate to route /main which re-inits)
-                  Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
-                }
-              },
+              onPressed: _isSaving ? null : _saveResult,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(13),
                 ),
               ),
-              icon: const Icon(Icons.bookmark_added_outlined),
-              label: const Text(
-                'Simpan Hasil',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.bookmark_added_outlined),
+              label: Text(
+                _isSaving ? 'Menyimpan...' : 'Simpan Hasil',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 11),
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: const Text(
@@ -761,10 +921,48 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  static Map<String, dynamic> _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
+  Future<void> _saveResult() async {
+    final analysisId = _toInt(analysisData['analysis_id']);
+    if (analysisId == null || analysisId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Hasil belum tersimpan di database. Silakan ulangi analisis.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
+
+    setState(() => _isSaving = true);
+    final saved = await ApiService.saveAnalysisHistory(analysisId);
+    if (!mounted) return;
+
+    setState(() => _isSaving = false);
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menyimpan hasil ke histori. Silakan coba lagi.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Berhasil disimpan di Histori!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+  }
+
+  // ─── Helpers ───────────────────────────────────────────
+
+  static Map<String, dynamic> _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
     if (value is Map) {
       return value.map((key, val) => MapEntry(key.toString(), val));
     }
@@ -772,10 +970,7 @@ class ResultScreen extends StatelessWidget {
   }
 
   static List<Map<String, dynamic>> _asMapList(dynamic value) {
-    if (value is! List) {
-      return [];
-    }
-
+    if (value is! List) return [];
     return value
         .whereType<Map>()
         .map((item) => item.map((key, val) => MapEntry(key.toString(), val)))
@@ -783,9 +978,7 @@ class ResultScreen extends StatelessWidget {
   }
 
   static List<String> _asStringList(dynamic value) {
-    if (value is! List) {
-      return [];
-    }
+    if (value is! List) return [];
     return value
         .map((item) => item?.toString().trim() ?? '')
         .where((item) => item.isNotEmpty)
@@ -793,36 +986,24 @@ class ResultScreen extends StatelessWidget {
   }
 
   static String? _asString(dynamic value) {
-    if (value == null) {
-      return null;
-    }
+    if (value == null) return null;
     final text = value.toString().trim();
     return text.isEmpty ? null : text;
   }
 
   static int? _toInt(dynamic value) {
-    if (value is int) {
-      return value;
-    }
-    if (value is num) {
-      return value.toInt();
-    }
-    if (value is String) {
-      return int.tryParse(value.trim());
-    }
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim());
     return null;
   }
 
   static bool _toBool(dynamic value) {
-    if (value is bool) {
-      return value;
-    }
-    if (value is num) {
-      return value != 0;
-    }
+    if (value is bool) return value;
+    if (value is num) return value != 0;
     if (value is String) {
-      final normalized = value.trim().toLowerCase();
-      return normalized == 'true' || normalized == '1' || normalized == 'yes';
+      final n = value.trim().toLowerCase();
+      return n == 'true' || n == '1' || n == 'yes';
     }
     return false;
   }
@@ -837,62 +1018,34 @@ class ResultScreen extends StatelessWidget {
     String fallbackRecommendation,
   ) {
     String? rawText;
-
     final modelOutput = _asString(aiAnalysis['model_output']);
     if (modelOutput != null && modelOutput.isNotEmpty) {
       rawText = modelOutput;
     } else {
       final text = _asString(aiAnalysis['text']);
-      if (text != null && text.isNotEmpty) {
-        rawText = text;
-      } else {
-        rawText = fallbackRecommendation;
-      }
+      rawText =
+          (text != null && text.isNotEmpty) ? text : fallbackRecommendation;
     }
-
-    // Menghilangkan simbol markdown seperti **, *, #, dan ` agar rapi dibaca
-    return rawText.replaceAll(RegExp(r'\*\*|\*|#|`'), '');
-  }
-
-  static List<String> _splitAiInsight(String text) {
-    final normalized = text
-        .replaceAll('\r\n', '\n')
-        .replaceAll('\r', '\n')
-        .trim();
-
-    if (normalized.isEmpty) {
-      return [];
-    }
-
-    final lines = normalized
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .map((line) {
-          final withoutBullet = line
-              .replaceFirst(RegExp(r'^[-*]\s*'), '')
-              .replaceFirst(RegExp(r'^\d+[\.)]\s*'), '');
-          return withoutBullet.trim();
-        })
-        .where((line) => line.isNotEmpty)
-        .toList();
-
-    if (lines.length <= 1) {
-      return normalized
-          .split(RegExp(r'(?<=[.!?])\s+'))
-          .map((part) => part.trim())
-          .where((part) => part.isNotEmpty)
-          .toList();
-    }
-
-    return lines;
+    return rawText
+        .replaceAll(RegExp(r'`'), '')
+        .replaceAll(RegExp(r'#{1,6}\s*'), '');
   }
 
   static String _clip(String value, {int maxLen = 100}) {
     final compact = value.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (compact.length <= maxLen) {
-      return compact;
-    }
+    if (compact.length <= maxLen) return compact;
     return '${compact.substring(0, maxLen - 3)}...';
   }
+}
+
+class _MarkdownSection {
+  final String? heading;
+  final String body;
+  const _MarkdownSection({required this.heading, required this.body});
+}
+
+class _DetailItem {
+  final String emoji;
+  final String text;
+  const _DetailItem(this.emoji, this.text);
 }
