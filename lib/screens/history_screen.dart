@@ -151,7 +151,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final mergedData = Map<String, dynamic>.from(detail);
       mergedData.putIfAbsent('analysis_id', () => mergedData['id']);
       
-      // Jika data berasala dari skema lama (JSON utuh disimpan di ai_analysis)
+      // Jika data berasal dari skema lama (JSON utuh disimpan di ai_analysis)
       if (mergedData['ai_analysis'] is Map && mergedData['ai_analysis']['expert_analysis'] != null) {
         final payload = Map<String, dynamic>.from(mergedData['ai_analysis']);
         mergedData.addAll(payload);
@@ -160,33 +160,55 @@ class _HistoryScreenState extends State<HistoryScreen> {
       // Jika data berasal dari skema baru (tabel analyses), rekonstruksi untuk ResultScreen
       if (mergedData['expert_analysis'] == null) {
         List<Map<String, dynamic>> flags = [];
+        List<String> unknownList = [];
         int unknownCount = 0;
         final matchedIngredients = detail['matched_ingredients'] is List ? detail['matched_ingredients'] : [];
         
         for (var ing in matchedIngredients) {
-          final risk = ing['risk']?.toString() ?? '';
+          final name = ing['name']?.toString() ?? 'Unknown';
+          final risk = ing['risk']?.toString() ?? ing['dataset_warnings']?.toString() ?? '';
+          
           if (risk.isNotEmpty && risk != 'No specific risk flagged') {
             flags.add({
-              'ingredient': ing['name'],
+              'ingredient': name,
               'message': risk,
             });
           }
-          ing['dataset_description'] = ing['benefit'];
-          ing['dataset_functions'] = ing['function'];
-          ing['dataset_warnings'] = risk != 'No specific risk flagged' ? risk : null;
-          ing['found_in_dataset'] = true;
+          
+          // Petakan deskripsi, fungsi & warnings
+          ing['dataset_description'] ??= ing['benefit'] ?? ing['description'];
+          ing['dataset_functions'] ??= ing['function'] ?? ing['functions'];
+          ing['dataset_warnings'] ??= (risk != 'No specific risk flagged' ? risk : null);
+          
+          // Handle bahan yang tidak dikenali (Unknown)
+          final status = ing['status']?.toString().toLowerCase();
+          final isUnknown = status == 'unknown' || ing['found_in_dataset'] == false;
+          ing['found_in_dataset'] ??= !isUnknown;
+          
+          if (isUnknown) {
+            unknownList.add(name);
+            unknownCount++;
+          }
+          
+          // Petakan metadata keamanan skincare (comedogenic, allergen, pregnancy, origin, bpom)
+          ing['comedogenic_rating'] ??= ing['comedogenic'];
+          ing['is_allergen'] ??= ing['allergen'];
+          ing['unsafe_for_pregnancy'] ??= ing['pregnancy_safe'] == false || ing['unsafe_for_pregnancy'];
+          ing['dataset_origin'] ??= ing['origin'];
+          ing['dataset_harmful'] ??= ing['harmful'];
+          ing['dataset_bpom_warning'] ??= ing['bpom_warning'];
         }
         
         mergedData['expert_analysis'] = {
           'warnings_found': flags.length,
-          'total_ingredients_identified': matchedIngredients.length,
+          'total_ingredients_identified': matchedIngredients.length - unknownCount,
           'total_unknown': unknownCount,
           'flags': flags,
-          'unknown_list': [],
+          'unknown_list': unknownList,
         };
       }
       
-      if (mergedData['ai_analysis'] == null || mergedData['ai_analysis'] is! Map || mergedData['ai_analysis']['text'] == null) {
+      if (mergedData['ai_analysis'] == null || mergedData['ai_analysis'] is! Map || (mergedData['ai_analysis']['text'] == null && mergedData['ai_analysis']['model_output'] == null)) {
         mergedData['ai_analysis'] = {
           'text': mergedData['recommendation'] ?? mergedData['summary'],
           'model': 'Dataset RAG',
@@ -257,11 +279,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ? _buildEmptyState()
                           : ListView.builder(
                               padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                              itemCount: _filteredItems.length + 1, // +1 for bottom page indicator
+                              itemCount: _filteredItems.length,
                               itemBuilder: (context, index) {
-                                if (index == _filteredItems.length) {
-                                  return _buildPageIndicator();
-                                }
                                 return _buildHistoryCard(_filteredItems[index], index);
                               },
                             ),
@@ -514,25 +533,4 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildPageIndicator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(3, (index) {
-          return Container(
-            width: index == 0 ? 10 : 8,
-            height: index == 0 ? 10 : 8,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: index == 0
-                  ? AppColors.primaryGreen
-                  : Colors.grey.shade300,
-            ),
-          );
-        }),
-      ),
-    );
-  }
 }
