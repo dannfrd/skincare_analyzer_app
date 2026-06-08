@@ -11,6 +11,7 @@ class UserSession {
   static const String _keyUserRole = 'user_role';
   static const String _keyUserProvider = 'user_provider';
   static const String _keyUserCreatedAt = 'user_created_at';
+  static const String _keyUserProfilePic = 'user_profile_pic';
 
   // In-memory cache so we don't hit disk on every read
   static String? _token;
@@ -20,24 +21,30 @@ class UserSession {
   static String? _userRole;
   static String? _userProvider;
   static String? _userCreatedAt;
+  static String? _userProfilePic;
 
   static Future<void> saveSession(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
 
-    _token = (data['access_token'] ?? data['token'] ?? data['accessToken'] ?? data['jwt'] ?? data['auth_token']) as String?;
-    if (_token == null) {
+    final String? newToken = (data['access_token'] ?? data['token'] ?? data['accessToken'] ?? data['jwt'] ?? data['auth_token']) as String?;
+    String? tokenToSave = newToken;
+    if (tokenToSave == null) {
        // Coba cari key yang berbau 'token' di dalam map
        for (final key in data.keys) {
          if (key.toLowerCase().contains('token')) {
-           _token = data[key] as String?;
+           tokenToSave = data[key] as String?;
            break;
          }
        }
     }
 
-    if (_token != null) {
+    if (tokenToSave != null) {
+      _token = tokenToSave;
       await prefs.setString(_keyToken, _token!);
     }
+
+    // ignore: avoid_print
+    print('DEBUG: UserSession.saveSession data: $data');
 
     // Check if user data is nested under 'user' key, else assume flat structure
     final user = data['user'] as Map<String, dynamic>? ?? data;
@@ -52,6 +59,14 @@ class UserSession {
       _userProvider = user['provider'] as String?;
       _userCreatedAt = user['created_at'] as String?;
 
+      final profilePic = user['profile_picture'] ?? user['profile_pic'];
+      // ignore: avoid_print
+      print('DEBUG: UserSession.saveSession profilePic parsed: $profilePic');
+
+      if (profilePic != null) {
+        _userProfilePic = profilePic as String?;
+        await prefs.setString(_keyUserProfilePic, _userProfilePic!);
+      }
 
       if (_userId != null) await prefs.setInt(_keyUserId, _userId!);
       if (_userName != null) await prefs.setString(_keyUserName, _userName!);
@@ -72,6 +87,7 @@ class UserSession {
     _userRole = prefs.getString(_keyUserRole);
     _userProvider = prefs.getString(_keyUserProvider);
     _userCreatedAt = prefs.getString(_keyUserCreatedAt);
+    _userProfilePic = prefs.getString(_keyUserProfilePic);
   }
 
   /// Clear session data (logout).
@@ -84,6 +100,7 @@ class UserSession {
     await prefs.remove(_keyUserRole);
     await prefs.remove(_keyUserProvider);
     await prefs.remove(_keyUserCreatedAt);
+    await prefs.remove(_keyUserProfilePic);
 
     _token = null;
     _userId = null;
@@ -92,6 +109,7 @@ class UserSession {
     _userRole = null;
     _userProvider = null;
     _userCreatedAt = null;
+    _userProfilePic = null;
   }
 
   // ---------- Getters ----------
@@ -103,6 +121,7 @@ class UserSession {
   static String? get userRole => _userRole;
   static String? get userProvider => _userProvider;
   static String? get userCreatedAt => _userCreatedAt;
+  static String? get userProfilePic => _userProfilePic;
 
   static bool get isLoggedIn => _token != null && _userId != null;
 
@@ -117,5 +136,19 @@ class UserSession {
     _userName = name;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyUserName, name);
+  }
+
+  /// Update the cached user email.
+  static Future<void> updateUserEmail(String email) async {
+    _userEmail = email;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyUserEmail, email);
+  }
+
+  /// Update the cached user profile picture path.
+  static Future<void> updateUserProfilePic(String path) async {
+    _userProfilePic = path;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyUserProfilePic, path);
   }
 }

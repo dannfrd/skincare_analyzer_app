@@ -1,19 +1,54 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:skincare_analyzer_app/main.dart';
-
+import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:skincare_analyzer_app/services/user_session.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final VoidCallback? onNavigateToHistory;
 
   const ProfileScreen({super.key, this.onNavigateToHistory});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  int _totalScans = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTotalScans();
+  }
+
+  Future<void> _fetchTotalScans() async {
+    try {
+      final history = await ApiService.getHistory();
+      if (mounted) {
+        setState(() {
+          _totalScans = history.length;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     // Assuming UserSession has been loaded during splash screen
     final String userName = UserSession.userName ?? 'User';
     final String userEmail = UserSession.userEmail ?? 'No email';
-    final String totalScans = '0'; // Would ideally come from stats API, setting to 0 placeholder for now
+
+    // ignore: avoid_print
+    print('DEBUG: ProfileScreen build. userProfilePic = ${UserSession.userProfilePic}');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -84,28 +119,45 @@ class ProfileScreen extends StatelessWidget {
                       child: CircleAvatar(
                         radius: 48,
                         backgroundColor: Colors.grey.shade300,
-                        child: Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Colors.grey.shade600,
-                        ),
+                        backgroundImage: UserSession.userProfilePic != null
+                            ? (UserSession.userProfilePic!.startsWith('http')
+                                ? NetworkImage(UserSession.userProfilePic!)
+                                : (UserSession.userProfilePic!.startsWith('/uploads/')
+                                    ? NetworkImage('${ApiService.baseUrl}${UserSession.userProfilePic}')
+                                    : FileImage(File(UserSession.userProfilePic!)))) as ImageProvider?
+                            : null,
+                        child: UserSession.userProfilePic == null
+                            ? Icon(
+                                Icons.person,
+                                size: 50,
+                                color: Colors.grey.shade600,
+                              )
+                            : null,
                       ),
                     ),
                     Positioned(
                       bottom: 2,
                       right: 2,
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                          size: 14,
+                      child: GestureDetector(
+                        onTap: () async {
+                          final res = await Navigator.pushNamed(context, '/edit-profile');
+                          if (res == true && mounted) {
+                            setState(() {});
+                          }
+                        },
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                         ),
                       ),
                     ),
@@ -142,14 +194,23 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      Text(
-                        totalScans,
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryGreenDark,
-                        ),
-                      ),
+                      _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: AppColors.primaryGreenDark,
+                              ),
+                            )
+                          : Text(
+                              '$_totalScans',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryGreenDark,
+                              ),
+                            ),
                       const SizedBox(height: 4),
                       Text(
                         'TOTAL SCANS',
@@ -201,15 +262,20 @@ class ProfileScreen extends StatelessWidget {
                       _buildMenuItem(
                         icon: Icons.person_outline,
                         title: 'Edit Profile',
-                        onTap: () {},
+                        onTap: () async {
+                          final res = await Navigator.pushNamed(context, '/edit-profile');
+                          if (res == true && mounted) {
+                            setState(() {});
+                          }
+                        },
                       ),
                       Divider(height: 1, indent: 56, color: Colors.grey.shade100),
                       _buildMenuItem(
                         icon: Icons.history,
                         title: 'Scan History',
                         onTap: () {
-                          if (onNavigateToHistory != null) {
-                            onNavigateToHistory!();
+                          if (widget.onNavigateToHistory != null) {
+                            widget.onNavigateToHistory!();
                           }
                         },
                       ),

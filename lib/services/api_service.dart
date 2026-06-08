@@ -256,4 +256,72 @@ class ApiService {
       throw Exception('Error fetching analysis detail: $e');
     }
   }
+
+  /// Upload profile picture to backend
+  static Future<Map<String, dynamic>> uploadProfilePicture(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/profile/upload'),
+      );
+
+      final token = UserSession.token;
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
+
+      var streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception(
+          'Failed to upload profile picture: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error uploading profile picture: $e');
+    }
+  }
+
+  /// Update user profile details (name, email, profile_picture, password)
+  static Future<Map<String, dynamic>> updateProfile({
+    String? name,
+    String? email,
+    String? profilePicture,
+    String? password,
+  }) async {
+    final payload = <String, dynamic>{};
+    if (name != null && name.isNotEmpty) payload['name'] = name;
+    if (email != null && email.isNotEmpty) payload['email'] = email;
+    if (profilePicture != null && profilePicture.isNotEmpty) {
+      payload['profile_picture'] = profilePicture;
+    }
+    if (password != null && password.isNotEmpty) payload['password'] = password;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/profile/update'),
+        headers: UserSession.authHeaders,
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception(
+          'Failed to update profile: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error updating profile: $e');
+    }
+  }
 }

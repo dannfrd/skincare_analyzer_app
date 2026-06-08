@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'config/app_config.dart';
 import 'models/scan_payload.dart';
 import 'screens/connection_test_screen.dart';
+import 'screens/edit_profile_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation.dart';
 import 'screens/notification_screen.dart';
@@ -80,6 +81,7 @@ class SkincareAnalyzerApp extends StatelessWidget {
         '/scan': (context) => const ScanScreen(),
         '/notifications': (context) => const NotificationScreen(),
         '/connection-test': (context) => const ConnectionTestScreen(),
+        '/edit-profile': (context) => const EditProfileScreen(),
         // Progress and Results typically get pushed with arguments rather than simple routes
       },
       onGenerateRoute: (settings) {
