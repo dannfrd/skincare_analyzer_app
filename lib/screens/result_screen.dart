@@ -17,8 +17,39 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   bool _isSaving = false;
 
+  // Recommendation async state
+  bool _isLoadingRecs = true;
+  List<Map<String, dynamic>> _recommendations = [];
+
   Map<String, dynamic> get analysisData => widget.analysisData;
   File? get imageFile => widget.imageFile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecommendations();
+  }
+
+  Future<void> _loadRecommendations() async {
+    final matched = _asMapList(widget.analysisData['matched_ingredients']);
+    final names = matched
+        .map((i) => (_asString(i['name']) ?? '').trim())
+        .where((n) => n.isNotEmpty)
+        .toList();
+
+    if (names.isEmpty) {
+      if (mounted) setState(() => _isLoadingRecs = false);
+      return;
+    }
+
+    final recs = await ApiService.getRecommendations(names);
+    if (mounted) {
+      setState(() {
+        _recommendations = recs;
+        _isLoadingRecs = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +143,8 @@ class _ResultScreenState extends State<ResultScreen> {
                       modelUsed: modelUsed,
                       modelsTried: modelsTried,
                     ),
+                    const SizedBox(height: 14),
+                    _buildRecommendationSection(),
                   ],
                 ),
               ),
@@ -829,6 +862,355 @@ class _ResultScreenState extends State<ResultScreen> {
         ],
       ),
     );
+  }
+
+  // ─── Recommendation Section (API-backed) ─────────────────────────────────
+
+  Widget _buildRecommendationSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header row
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0E6FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.recommend_rounded,
+                size: 16,
+                color: Color(0xFF7C3AED),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Produk Serupa',
+              style: TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textDark,
+                letterSpacing: 0.1,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0E6FF),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Dataset INCIDecoder',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF7C3AED),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Content: loading / empty / list
+        if (_isLoadingRecs)
+          _buildRecommendationLoading()
+        else if (_recommendations.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.search_off_rounded,
+                    color: Colors.grey.shade400, size: 20),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Tidak ditemukan produk serupa dari dataset.',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textGray,
+                        height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(right: 4),
+              itemCount: _recommendations.length,
+              separatorBuilder: (_, i) => const SizedBox(width: 12),
+              itemBuilder: (context, index) =>
+                  _buildRecommendationCard(_recommendations[index], index),
+            ),
+          ),
+
+        const SizedBox(height: 4),
+        Center(
+          child: Text(
+            '💡 Produk serupa berdasarkan kemiripan semantik bahan (dataset INCIDecoder)',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.5,
+              color: Colors.grey.shade500,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationLoading() {
+    return SizedBox(
+      height: 200,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(right: 4),
+        itemCount: 4,
+        separatorBuilder: (_, i) => const SizedBox(width: 12),
+        itemBuilder: (_, b) => Container(
+          width: 175,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(15)),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                        height: 9,
+                        width: 50,
+                        color: Colors.grey.shade200),
+                    const SizedBox(height: 6),
+                    Container(
+                        height: 11,
+                        width: 130,
+                        color: Colors.grey.shade200),
+                    const SizedBox(height: 4),
+                    Container(
+                        height: 11,
+                        width: 90,
+                        color: Colors.grey.shade200),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendationCard(
+      Map<String, dynamic> product, int index) {
+    final name = _asString(product['name']) ?? 'Unknown Product';
+    final brand = _asString(product['brand']) ?? '';
+    final pct = product['similarity_pct'] is int
+        ? product['similarity_pct'] as int
+        : int.tryParse(product['similarity_pct']?.toString() ?? '') ?? 0;
+    final matched = _asStringList(product['matched_ingredients']);
+    final matchReason = _asString(product['match_reason']);
+
+    final (color, icon) = _inferProductStyle(name);
+
+    return Container(
+      width: 175,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.12),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Gradient header
+          Container(
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.88),
+                  color.withValues(alpha: 0.55),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(15)),
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Icon(icon,
+                      size: 30,
+                      color: Colors.white.withValues(alpha: 0.9)),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 9,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.28),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '$pct% mirip',
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Body
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (brand.isNotEmpty)
+                    Text(
+                      brand.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                        letterSpacing: 0.7,
+                      ),
+                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
+                      height: 1.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (matched.isNotEmpty)
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 3,
+                      children: matched
+                          .map(
+                            (k) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                k,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  if (matchReason != null && matchReason.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        matchReason,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 8.5,
+                          color: color.withValues(alpha: 0.75),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Infer a color + icon pair from the product name keywords.
+  static (Color, IconData) _inferProductStyle(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('sunscreen') || n.contains('spf') || n.contains(' uv ')) {
+      return (const Color(0xFF4A90D9), Icons.wb_sunny_rounded);
+    }
+    if (n.contains('serum') || n.contains('essence') || n.contains('ampoule')) {
+      return (const Color(0xFF9B59B6), Icons.science_rounded);
+    }
+    if (n.contains('moisturizer') || n.contains('cream') || n.contains('lotion')) {
+      return (const Color(0xFF16A085), Icons.water_drop_rounded);
+    }
+    if (n.contains('toner') || n.contains('mist')) {
+      return (const Color(0xFFF39C12), Icons.opacity_rounded);
+    }
+    if (n.contains('cleanser') ||
+        n.contains('wash') ||
+        n.contains('foam') ||
+        n.contains('cleansing')) {
+      return (const Color(0xFF2ECC71), Icons.soap_rounded);
+    }
+    if (n.contains('exfoliat') || n.contains('peeling') || n.contains('peel')) {
+      return (const Color(0xFFE74C3C), Icons.auto_fix_high_rounded);
+    }
+    if (n.contains('eye')) { return (const Color(0xFF8E44AD), Icons.remove_red_eye_rounded); }
+    if (n.contains('lip')) { return (const Color(0xFFE91E7A), Icons.face_retouching_natural_rounded); }
+    if (n.contains('mask') || n.contains('sheet')) {
+      return (const Color(0xFF1ABC9C), Icons.masks_rounded);
+    }
+    if (n.contains('oil') || n.contains('balm')) {
+      return (const Color(0xFFE67E22), Icons.water_rounded);
+    }
+    return (AppColors.primaryGreenDark, Icons.spa_rounded);
   }
 
   Widget _buildSoftChip(IconData icon, String text, Color color) {

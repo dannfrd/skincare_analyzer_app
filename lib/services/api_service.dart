@@ -324,4 +324,38 @@ class ApiService {
       throw Exception('Error updating profile: $e');
     }
   }
+
+  /// Fetch product recommendations from INCIDecoder dataset
+  /// based on ingredient overlap with the scanned product.
+  static Future<List<Map<String, dynamic>>> getRecommendations(
+    List<String> ingredients, {
+    int limit = 6,
+  }) async {
+    if (ingredients.isEmpty) return [];
+    try {
+      final uri = Uri.parse('$baseUrl/recommendations').replace(
+        queryParameters: {
+          'ingredients': ingredients.join(','),
+          'limit': limit.toString(),
+        },
+      );
+      final response = await http
+          .get(uri, headers: UserSession.authHeaders)
+          .timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final recs = data['recommendations'];
+        if (recs is List) {
+          return recs
+              .whereType<Map>()
+              .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
+              .toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
 }

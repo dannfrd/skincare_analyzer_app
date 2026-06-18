@@ -34,13 +34,9 @@ class _ScanScreenState extends State<ScanScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _capturedImage;
   bool _isCameraOpening = false;
-  final TextEditingController _productNameController = TextEditingController();
   final TextEditingController _productBrandController = TextEditingController();
-  final TextEditingController _productCategoryController =
-      TextEditingController();
 
   String? _selectedCategory;
-  bool _showManualCategory = false;
 
   @override
   void initState() {
@@ -164,36 +160,20 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
-  void _onCategoryChipSelected(String category) {
-    setState(() {
-      if (category == 'Lainnya...') {
-        _showManualCategory = true;
-        _selectedCategory = 'Lainnya...';
-        _productCategoryController.clear();
-      } else {
-        _showManualCategory = false;
-        _selectedCategory = category;
-        _productCategoryController.text = category;
-      }
-    });
-  }
-
   void _proceedToAnalysis() {
     if (_capturedImage == null) return;
     final payload = ScanPayload(
       imageFile: _capturedImage!,
-      productName: _productNameController.text,
+      productName: '',
       productBrand: _productBrandController.text,
-      productCategory: _productCategoryController.text,
+      productCategory: _selectedCategory ?? '',
     );
     Navigator.pushReplacementNamed(context, '/progress', arguments: payload);
   }
 
   @override
   void dispose() {
-    _productNameController.dispose();
     _productBrandController.dispose();
-    _productCategoryController.dispose();
     super.dispose();
   }
 
@@ -387,86 +367,72 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
           const SizedBox(height: 12),
           _buildProductField(
-            controller: _productNameController,
-            label: 'Nama Produk',
-            hint: 'cth. Acne Moisturizer',
-            icon: Icons.spa_outlined,
-          ),
-          const SizedBox(height: 10),
-          _buildProductField(
             controller: _productBrandController,
             label: 'Brand',
-            hint: 'cth. Skintific',
+            hint: 'cth. Skintific, Azarine, Some By Mi...',
             icon: Icons.storefront_outlined,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Kategori',
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textDark),
-          ),
-          const SizedBox(height: 8),
-          _buildCategoryChips(),
-          if (_showManualCategory) ...[
-            const SizedBox(height: 10),
-            _buildProductField(
-              controller: _productCategoryController,
-              label: 'Ketik kategori lainnya',
-              hint: 'cth. Hair Tonic',
-              icon: Icons.edit_outlined,
-            ),
-          ],
+          _buildCategoryDropdown(),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryChips() {
-    final categories = [..._kProductCategories, 'Lainnya...'];
-    return Wrap(
-      spacing: 7,
-      runSpacing: 7,
-      children: categories.map((cat) {
-        final isSelected = _selectedCategory == cat;
-        final isOther = cat == 'Lainnya...';
-        return GestureDetector(
-          onTap: () => _onCategoryChipSelected(cat),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? (isOther
-                      ? const Color(0xFFF0F4FF)
-                      : AppColors.primaryGreen.withValues(alpha: 0.12))
-                  : const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? (isOther
-                        ? const Color(0xFF3B82F6)
-                        : AppColors.primaryGreenDark)
-                    : Colors.grey.shade300,
-                width: isSelected ? 1.5 : 1,
-              ),
-            ),
-            child: Text(
-              cat,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected
-                    ? (isOther
-                        ? const Color(0xFF1D4ED8)
-                        : AppColors.primaryGreenDark)
-                    : AppColors.textGray,
-              ),
-            ),
+  Widget _buildCategoryDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Kategori',
+          style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textDark),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedCategory,
+          hint: const Text(
+            'Pilih kategori produk',
+            style: TextStyle(fontSize: 13, color: Color(0xFFAFB8C1)),
           ),
-        );
-      }).toList(),
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded,
+              color: AppColors.textGray, size: 20),
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.category_outlined,
+                size: 17, color: AppColors.textGray),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(9),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(9),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(9),
+              borderSide:
+                  const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+          style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          items: _kProductCategories.map((cat) {
+            return DropdownMenuItem<String>(
+              value: cat,
+              child: Text(cat),
+            );
+          }).toList(),
+          onChanged: (val) => setState(() => _selectedCategory = val),
+        ),
+      ],
     );
   }
 
