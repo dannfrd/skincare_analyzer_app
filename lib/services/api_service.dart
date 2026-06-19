@@ -330,14 +330,19 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getRecommendations(
     List<String> ingredients, {
     int limit = 6,
+    String? category,
   }) async {
     if (ingredients.isEmpty) return [];
     try {
+      final queryParams = {
+        'ingredients': ingredients.join(','),
+        'limit': limit.toString(),
+      };
+      if (category != null && category.trim().isNotEmpty) {
+        queryParams['category'] = category.trim();
+      }
       final uri = Uri.parse('$baseUrl/recommendations').replace(
-        queryParameters: {
-          'ingredients': ingredients.join(','),
-          'limit': limit.toString(),
-        },
+        queryParameters: queryParams,
       );
       final response = await http
           .get(uri, headers: UserSession.authHeaders)
