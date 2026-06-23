@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_paddle_ocr/flutter_paddle_ocr.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
@@ -10,6 +12,20 @@ import 'ingredient_text_filter.dart';
 class OcrService {
   static const MethodChannel _channel = MethodChannel('flutter_tesseract_ocr');
   static const String _trainedDataAsset = 'assets/tessdata/eng.traineddata';
+  static PaddleOcr? _paddleOcr;
+  static Future<PaddleOcr>? _paddleOcrInit;
+  static const String _paddleModelBaseUrl = 'https://paddleocr.bj.bcebos.com/PP-OCRv3/english';
+  static const String _paddleDictUrl = 'https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/en_dict.txt';
+
+  // ==================================================
+  // KONFIGURASI ENGINE PENELITIAN (TA):
+  // Ubah konstanta ini untuk mengganti engine utama aplikasi:
+  // - 'hybrid'    : Menggunakan MLKit dengan fallback Tesseract (Default)
+  // - 'mlkit'     : Menggunakan Google MLKit murni
+  // - 'tesseract' : Menggunakan Tesseract murni
+  // - 'paddleocr' : Menggunakan PaddleOCR secara lokal di perangkat
+  // ==================================================
+  static const String activeEngine = 'paddleocr';
 
   static Future<String> extractText(File imageFile) async {
     if (!await imageFile.exists()) {
@@ -17,48 +33,155 @@ class OcrService {
     }
 
     try {
-      final mlKitText = await _extractWithMlKit(imageFile);
-      if (!_looksWeak(mlKitText)) {
-        return mlKitText;
+      String mlKitText = '';
+      String tessText = '';
+      String hybridText = '';
+      String paddleText = '';
+      String tessDataRoot = '';
+      File? processedFile;
+
+      // 1. Ekstrak dengan PaddleOCR Local (Bila engine aktif adalah paddleocr)
+      if (activeEngine == 'paddleocr') {
+        try {
+          paddleText = await _extractWithPaddleOcr(imageFile);
+        } catch (e) {
+          paddleText = 'Error running PaddleOCR: $e';
+        }
       }
 
-      final tessDataRoot = await _prepareTessData();
-      final processedFile = await _prepareImageForOcr(imageFile);
-
-      final candidates = <String>[mlKitText];
-      candidates.add(
-        IngredientTextFilter.selectFromPlainText(
-          await _runOcr(processedFile, tessDataRoot, psm: '6'),
-        ),
-      );
-
-      if (_looksWeak(candidates.first)) {
-        candidates.add(
-          IngredientTextFilter.selectFromPlainText(
-            await _runOcr(processedFile, tessDataRoot, psm: '11'),
-          ),
-        );
-        candidates.add(
-          IngredientTextFilter.selectFromPlainText(
-            await _runOcr(processedFile, tessDataRoot, psm: '4'),
-          ),
-        );
+      // 2. Ekstrak dengan MLKit Murni jika engine aktif membutuhkannya
+      if (activeEngine == 'mlkit' || activeEngine == 'hybrid') {
+        mlKitText = await _extractWithMlKit(imageFile);
       }
 
-      if (processedFile.path != imageFile.path) {
-        candidates.add(
-          IngredientTextFilter.selectFromPlainText(
-            await _runOcr(imageFile, tessDataRoot, psm: '6'),
-          ),
-        );
+      // 2. Ekstrak dengan Tesseract Murni jika engine aktif membutuhkannya
+      if (activeEngine == 'tesseract' || activeEngine == 'hybrid') {
+        try {
+          tessDataRoot = await _prepareTessData();
+          processedFile = await _prepareImageForOcr(imageFile);
+          tessText = await _runOcr(processedFile, tessDataRoot, psm: '6');
+
+          // Fallback 1: Coba dengan gambar asli jika gambar hasil pemrosesan kosong
+          if (tessText.trim().isEmpty) {
+            tessText = await _runOcr(imageFile, tessDataRoot, psm: '6');
+          }
+
+          // Fallback 2: Coba dengan PSM 3 (Automatic) jika masih kosong
+          if (tessText.trim().isEmpty) {
+            tessText = await _runOcr(processedFile, tessDataRoot, psm: '3');
+          }
+
+          // Fallback 3: Coba dengan PSM 11 jika masih kosong
+          if (tessText.trim().isEmpty) {
+            tessText = await _runOcr(processedFile, tessDataRoot, psm: '11');
+          }
+        } catch (e) {
+          tessText = 'Error running Tesseract: $e';
+        }
       }
 
-      final best = _pickBest(candidates);
-      if (best.trim().isEmpty) {
-        throw Exception('OCR did not detect any text in the image.');
+      // 3. Proses Hybrid (Logika Cerdas Fallback) hanya jika engine hybrid aktif
+      if (activeEngine == 'hybrid') {
+        hybridText = mlKitText;
+        if (_looksWeak(mlKitText)) {
+          final candidates = <String>[mlKitText];
+          if (tessText.isNotEmpty && !tessText.startsWith('Error')) {
+            candidates.add(IngredientTextFilter.selectFromPlainText(tessText));
+          }
+
+          try {
+            if (processedFile != null) {
+              candidates.add(
+                IngredientTextFilter.selectFromPlainText(
+                  await _runOcr(processedFile, tessDataRoot, psm: '11'),
+                ),
+              );
+              candidates.add(
+                IngredientTextFilter.selectFromPlainText(
+                  await _runOcr(processedFile, tessDataRoot, psm: '4'),
+                ),
+              );
+            }
+            if (processedFile != null && processedFile.path != imageFile.path) {
+              candidates.add(
+                IngredientTextFilter.selectFromPlainText(
+                  await _runOcr(imageFile, tessDataRoot, psm: '6'),
+                ),
+              );
+            }
+          } catch (_) {}
+
+          hybridText = _pickBest(candidates);
+        }
       }
 
-      return best.trim();
+      // Cetak semua hasil ke Konsol Debug Flutter untuk kebutuhan PENELITIAN
+      // ignore: avoid_print
+      print("\n==================================================");
+      // ignore: avoid_print
+      print("      [PENELITIAN OCR] HASIL SCAN BATCH DATA      ");
+      // ignore: avoid_print
+      print("==================================================");
+      // ignore: avoid_print
+      print("Active Engine: ${activeEngine.toUpperCase()}");
+      // ignore: avoid_print
+      print("--------------------------------------------------");
+      
+      if (activeEngine == 'paddleocr') {
+        // ignore: avoid_print
+        print(">>> PADDLE OCR MURNI LOKAL:");
+        // ignore: avoid_print
+        print(paddleText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : paddleText.trim());
+        // ignore: avoid_print
+        print("--------------------------------------------------");
+      }
+
+      if (activeEngine == 'mlkit' || activeEngine == 'hybrid') {
+        // ignore: avoid_print
+        print(">>> MLKIT MURNI:");
+        // ignore: avoid_print
+        print(mlKitText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : mlKitText.trim());
+        // ignore: avoid_print
+        print("--------------------------------------------------");
+      }
+      
+      if (activeEngine == 'tesseract' || activeEngine == 'hybrid') {
+        // ignore: avoid_print
+        print(">>> TESSERACT MURNI (PSM 6):");
+        // ignore: avoid_print
+        print(tessText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : tessText.trim());
+        // ignore: avoid_print
+        print("--------------------------------------------------");
+      }
+      
+      if (activeEngine == 'hybrid') {
+        // ignore: avoid_print
+        print(">>> HYBRID (MLKIT + TESSERACT):");
+        // ignore: avoid_print
+        print(hybridText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : hybridText.trim());
+        // ignore: avoid_print
+        print("--------------------------------------------------");
+      }
+      // ignore: avoid_print
+      print("==================================================\n");
+
+      // Menentukan teks mana yang akan dikembalikan sesuai konfigurasi penelitian
+      String returnedText = '';
+      if (activeEngine == 'mlkit') {
+        returnedText = mlKitText;
+      } else if (activeEngine == 'tesseract') {
+        returnedText = tessText;
+      } else if (activeEngine == 'paddleocr') {
+        returnedText = paddleText;
+      } else {
+        returnedText = hybridText;
+      }
+
+      if (returnedText.trim().isEmpty) {
+        throw Exception('OCR did not detect any text in the image using ${activeEngine.toUpperCase()}');
+      }
+
+      return returnedText.trim();
     } on MissingPluginException catch (e) {
       throw Exception(
         'OCR native plugin is unavailable on this platform/build: $e',
@@ -96,6 +219,100 @@ class OcrService {
     }
   }
 
+  static Future<String> _extractWithPaddleOcr(File imageFile) async {
+    final engine = await _getPaddleOcr();
+    final imageBytes = await imageFile.readAsBytes();
+    final results = await engine.recognize(imageBytes);
+    final lines = <String>[];
+
+    for (final result in results) {
+      final text = result.text.trim();
+      if (text.isNotEmpty) {
+        lines.add(text);
+      }
+    }
+
+    return IngredientTextFilter.selectFromPlainText(lines.join('\n'));
+  }
+
+  static Future<PaddleOcr> _getPaddleOcr() {
+    final cached = _paddleOcr;
+    if (cached != null) {
+      return Future.value(cached);
+    }
+
+    final pending = _paddleOcrInit;
+    if (pending != null) {
+      return pending;
+    }
+
+    final initialized = _createPaddleOcr().then((ocr) {
+      _paddleOcr = ocr;
+      return ocr;
+    });
+
+    _paddleOcrInit = initialized;
+    return initialized;
+  }
+
+  static Future<PaddleOcr> _createPaddleOcr() async {
+    final modelsDir = await _getPaddleModelsDirectory();
+    final detPath = await _ensureDownloadedFile(
+      url: '$_paddleModelBaseUrl/en_PP-OCRv3_det_slim_infer.nb',
+      directory: modelsDir,
+      fileName: 'en_PP-OCRv3_det_slim_infer.nb',
+    );
+    final recPath = await _ensureDownloadedFile(
+      url: '$_paddleModelBaseUrl/en_PP-OCRv3_rec_slim_infer.nb',
+      directory: modelsDir,
+      fileName: 'en_PP-OCRv3_rec_slim_infer.nb',
+    );
+    final dictPath = await _ensureDownloadedFile(
+      url: _paddleDictUrl,
+      directory: modelsDir,
+      fileName: 'en_dict.txt',
+    );
+
+    return PaddleOcr.create(
+      source: FilePathsModelSource(
+        det: detPath.path,
+        rec: recPath.path,
+        dict: dictPath.path,
+      ),
+      cpuThreadNum: 4,
+      cpuPower: CpuPower.high,
+      useOpenCL: false,
+    );
+  }
+
+  static Future<Directory> _getPaddleModelsDirectory() async {
+    final appDirectory = await getApplicationDocumentsDirectory();
+    final modelsDirectory = Directory('${appDirectory.path}${Platform.pathSeparator}paddleocr_models');
+    if (!await modelsDirectory.exists()) {
+      await modelsDirectory.create(recursive: true);
+    }
+    return modelsDirectory;
+  }
+
+  static Future<File> _ensureDownloadedFile({
+    required String url,
+    required Directory directory,
+    required String fileName,
+  }) async {
+    final targetFile = File('${directory.path}${Platform.pathSeparator}$fileName');
+    if (await targetFile.exists() && await targetFile.length() > 0) {
+      return targetFile;
+    }
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to download PaddleOCR model: $url (${response.statusCode})');
+    }
+
+    await targetFile.writeAsBytes(response.bodyBytes, flush: true);
+    return targetFile;
+  }
+
   static Future<String> _runOcr(
     File imageFile,
     String tessDataRoot, {
@@ -119,7 +336,13 @@ class OcrService {
         return imageFile;
       }
 
-      final targetWidth = decoded.width < 1400 ? 1400 : decoded.width;
+      int targetWidth = decoded.width;
+      if (decoded.width > 1600) {
+        targetWidth = 1600;
+      } else if (decoded.width < 1000) {
+        targetWidth = 1000;
+      }
+
       final resized = img.copyResize(
         decoded,
         width: targetWidth,
@@ -135,9 +358,9 @@ class OcrService {
 
       final tempDir = await getTemporaryDirectory();
       final output = File(
-        '${tempDir.path}/ocr_${DateTime.now().millisecondsSinceEpoch}.png',
+        '${tempDir.path}/ocr_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
-      await output.writeAsBytes(img.encodePng(enhanced));
+      await output.writeAsBytes(img.encodeJpg(enhanced, quality: 95));
       return output;
     } catch (_) {
       return imageFile;

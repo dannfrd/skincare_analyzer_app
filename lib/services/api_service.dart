@@ -87,7 +87,7 @@ class ApiService {
       );
 
       var streamedResponse = await request.send().timeout(
-        const Duration(seconds: 90),
+        const Duration(seconds: 180),
       );
       var response = await http.Response.fromStream(streamedResponse);
 

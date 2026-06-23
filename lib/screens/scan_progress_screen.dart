@@ -31,20 +31,37 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
     setState(() => _currentStep = 1); // Extracting Text
 
     try {
-      final extractedText = await OcrService.extractText(
-        widget.payload.imageFile,
-      );
+      final Map<String, dynamic> result;
+
+      if (OcrService.activeEngine == 'paddleocr') {
+        // PaddleOCR mobile plugin v0.2 masih tidak stabil di semua device,
+        // jadi mode ini memakai backend PaddleOCR yang sudah terbukti jalan.
+        result = await ApiService.analyzeImage(
+          widget.payload.imageFile,
+          productName: widget.payload.productName,
+          productBrand: widget.payload.productBrand,
+          productCategory: widget.payload.productCategory,
+        );
+      } else {
+        // Lakukan OCR lokal (Tesseract/MLKit/Hybrid) terlebih dahulu di HP
+        final extractedText = await OcrService.extractText(
+          widget.payload.imageFile,
+        );
+
+        if (!mounted) return;
+        setState(() => _currentStep = 2); // AI analysis
+
+        // Kirim teks hasil scan lokal ke backend
+        result = await ApiService.analyzeText(
+          extractedText,
+          productName: widget.payload.productName,
+          productBrand: widget.payload.productBrand,
+          productCategory: widget.payload.productCategory,
+        );
+      }
 
       if (!mounted) return;
-      setState(() => _currentStep = 2); // AI analysis
-
-      // Stage 3: Send extracted text to backend analysis endpoint
-      final result = await ApiService.analyzeText(
-        extractedText,
-        productName: widget.payload.productName,
-        productBrand: widget.payload.productBrand,
-        productCategory: widget.payload.productCategory,
-      );
+      setState(() => _currentStep = 2); // AI analysis selesai
 
       // Stage 4: Short delay then navigate to results
       await Future.delayed(const Duration(milliseconds: 800));
