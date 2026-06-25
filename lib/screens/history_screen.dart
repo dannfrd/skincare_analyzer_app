@@ -4,28 +4,27 @@ import 'package:skincare_analyzer_app/screens/result_screen.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:skincare_analyzer_app/services/user_session.dart';
 
-// Dummy data model
+// ─── Data Model ─────────────────────────────────────────────────────────────
+
 class ScanHistoryItem {
   final int? analysisId;
-  final String productName;
-  final String brand;
+  final String productBrand; // Nama brand yang diisi user saat scan
+  final String productCategory; // Kategori yang dipilih saat scan
   final String date;
   final String summary;
   final String recommendation;
-  final Color imageColor;
-  final IconData imageIcon;
 
   const ScanHistoryItem({
     required this.analysisId,
-    required this.productName,
-    required this.brand,
+    required this.productBrand,
+    required this.productCategory,
     required this.date,
     required this.summary,
     required this.recommendation,
-    required this.imageColor,
-    required this.imageIcon,
   });
 }
+
+// ─── Screen ─────────────────────────────────────────────────────────────────
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -35,7 +34,6 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  String _selectedFilter = 'All';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -52,22 +50,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _fetchHistory() async {
     try {
       final List<dynamic> historyData = await ApiService.getHistory();
-      
+
       final List<ScanHistoryItem> parsedItems = historyData.map((e) {
-        final product = e['product'] ?? {};
-        final analysis = e['analyses'] is List && e['analyses'].isNotEmpty ? e['analyses'][0] : e;
-        
+        final product = e['product'] is Map ? e['product'] as Map : {};
+        final analysis =
+            e['analyses'] is List && (e['analyses'] as List).isNotEmpty
+                ? e['analyses'][0]
+                : e;
+
+        // Brand: prioritize product_brand → product['brand'] → product['name'] → fallback
+        final brand = _str(product['brand']) ??
+            _str(e['product_brand']) ??
+            _str(product['name']) ??
+            _str(e['product_name']) ??
+            'Produk Tidak Diketahui';
+
+        // Category: prioritize product['category'] → e['product_category']
+        final category = _str(product['category']) ??
+            _str(e['product_category']) ??
+            '';
+
         return ScanHistoryItem(
           analysisId: _toInt(e['analysis_id']) ?? _toInt(analysis['id']),
-          productName: product['name'] ?? e['product_name'] ?? 'Unknown Product',
-          brand: product['brand'] ?? e['product_brand'] ?? 'Unknown Brand',
-          date: e['created_at'] != null 
-              ? e['created_at'].toString().split('T')[0] 
-              : 'Unknown Date',
-          summary: analysis['summary']?.toString() ?? 'Ringkasan analisis belum tersedia.',
-          recommendation: analysis['recommendation']?.toString() ?? 'Belum ada rekomendasi tambahan.',
-          imageColor: const Color(0xFFD6EAF0),
-          imageIcon: Icons.water_drop_outlined,
+          productBrand: brand,
+          productCategory: category,
+          date: e['created_at'] != null
+              ? _formatDate(e['created_at'].toString())
+              : 'Tanggal tidak diketahui',
+          summary: _str(analysis['summary']) ??
+              'Ringkasan analisis belum tersedia.',
+          recommendation: _str(analysis['recommendation']) ??
+              'Belum ada rekomendasi tambahan.',
         );
       }).toList();
 
@@ -80,33 +93,95 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          final tokenStatus = UserSession.token != null ? 'Present' : 'Null';
-          _errorMessage = '${e.toString().replaceAll('Exception: ', '')}\n[Debug: Token is $tokenStatus]';
+          final tokenStatus =
+              UserSession.token != null ? 'Present' : 'Null';
+          _errorMessage =
+              '${e.toString().replaceAll('Exception: ', '')}\n[Debug: Token is $tokenStatus]';
           _isLoading = false;
         });
       }
     }
   }
 
+  // ── Helpers ─────────────────────────────────────────────────────────────
+
+  String? _str(dynamic value) {
+    if (value == null) return null;
+    final s = value.toString().trim();
+    return s.isNotEmpty ? s : null;
+  }
+
   int? _toInt(dynamic value) {
-    if (value is int) {
-      return value;
-    }
-    if (value is num) {
-      return value.toInt();
-    }
-    if (value is String) {
-      return int.tryParse(value.trim());
-    }
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value.trim());
     return null;
   }
 
+  String _formatDate(String raw) {
+    try {
+      final dt = DateTime.parse(raw);
+      const months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      ];
+      return '${dt.day} ${months[dt.month]} ${dt.year}';
+    } catch (_) {
+      return raw.split('T')[0];
+    }
+  }
+
+  /// Infer a color + icon from the product category.
+  static (Color, IconData) _styleFromCategory(String category) {
+    final c = category.toLowerCase();
+    if (c.contains('sunscreen') || c.contains('spf')) {
+      return (const Color(0xFF4A90D9), Icons.wb_sunny_rounded);
+    }
+    if (c.contains('serum') || c.contains('essence') || c.contains('ampoule')) {
+      return (const Color(0xFF9B59B6), Icons.science_rounded);
+    }
+    if (c.contains('moisturizer') || c.contains('cream') || c.contains('lotion')) {
+      return (const Color(0xFF16A085), Icons.water_drop_rounded);
+    }
+    if (c.contains('toner') || c.contains('mist')) {
+      return (const Color(0xFFF39C12), Icons.opacity_rounded);
+    }
+    if (c.contains('cleanser') || c.contains('wash') ||
+        c.contains('foam') || c.contains('cleansing')) {
+      return (const Color(0xFF2ECC71), Icons.soap_rounded);
+    }
+    if (c.contains('exfoliat') || c.contains('peeling')) {
+      return (const Color(0xFFE74C3C), Icons.auto_fix_high_rounded);
+    }
+    if (c.contains('eye')) {
+      return (const Color(0xFF8E44AD), Icons.remove_red_eye_rounded);
+    }
+    if (c.contains('lip')) {
+      return (const Color(0xFFE91E7A), Icons.face_retouching_natural_rounded);
+    }
+    if (c.contains('mask') || c.contains('sheet')) {
+      return (const Color(0xFF1ABC9C), Icons.masks_rounded);
+    }
+    if (c.contains('body') || c.contains('lotion')) {
+      return (const Color(0xFFE67E22), Icons.water_rounded);
+    }
+    if (c.contains('primer') || c.contains('bb') || c.contains('cc')) {
+      return (const Color(0xFFC0392B), Icons.brush_rounded);
+    }
+    return (AppColors.primaryGreenDark, Icons.spa_rounded);
+  }
+
+  // ── Navigation ───────────────────────────────────────────────────────────
+
   Map<String, dynamic> _buildFallbackAnalysisData(ScanHistoryItem item) {
-    final fallbackId = item.analysisId ?? 0;
     return {
-      'analysis_id': fallbackId,
+      'analysis_id': item.analysisId ?? 0,
       'summary': item.summary,
       'recommendation': item.recommendation,
+      'product': {
+        'brand': item.productBrand,
+        'category': item.productCategory,
+      },
       'expert_analysis': {
         'warnings_found': 0,
         'total_ingredients_identified': 0,
@@ -150,65 +225,72 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       final mergedData = Map<String, dynamic>.from(detail);
       mergedData.putIfAbsent('analysis_id', () => mergedData['id']);
-      
-      // Jika data berasal dari skema lama (JSON utuh disimpan di ai_analysis)
-      if (mergedData['ai_analysis'] is Map && mergedData['ai_analysis']['expert_analysis'] != null) {
-        final payload = Map<String, dynamic>.from(mergedData['ai_analysis']);
+
+      // Skema lama: JSON utuh disimpan di ai_analysis
+      if (mergedData['ai_analysis'] is Map &&
+          mergedData['ai_analysis']['expert_analysis'] != null) {
+        final payload =
+            Map<String, dynamic>.from(mergedData['ai_analysis'] as Map);
         mergedData.addAll(payload);
       }
-      
-      // Jika data berasal dari skema baru (tabel analyses), rekonstruksi untuk ResultScreen
+
+      // Skema baru: tabel analyses — rekonstruksi untuk ResultScreen
       if (mergedData['expert_analysis'] == null) {
         List<Map<String, dynamic>> flags = [];
         List<String> unknownList = [];
         int unknownCount = 0;
-        final matchedIngredients = detail['matched_ingredients'] is List ? detail['matched_ingredients'] : [];
-        
+        final matchedIngredients = detail['matched_ingredients'] is List
+            ? detail['matched_ingredients'] as List
+            : [];
+
         for (var ing in matchedIngredients) {
           final name = ing['name']?.toString() ?? 'Unknown';
-          final risk = ing['risk']?.toString() ?? ing['dataset_warnings']?.toString() ?? '';
-          
+          final risk = ing['risk']?.toString() ??
+              ing['dataset_warnings']?.toString() ??
+              '';
+
           if (risk.isNotEmpty && risk != 'No specific risk flagged') {
-            flags.add({
-              'ingredient': name,
-              'message': risk,
-            });
+            flags.add({'ingredient': name, 'message': risk});
           }
-          
-          // Petakan deskripsi, fungsi & warnings
+
           ing['dataset_description'] ??= ing['benefit'] ?? ing['description'];
           ing['dataset_functions'] ??= ing['function'] ?? ing['functions'];
-          ing['dataset_warnings'] ??= (risk != 'No specific risk flagged' ? risk : null);
-          
-          // Handle bahan yang tidak dikenali (Unknown)
+          ing['dataset_warnings'] ??=
+              (risk != 'No specific risk flagged' ? risk : null);
+
           final status = ing['status']?.toString().toLowerCase();
-          final isUnknown = status == 'unknown' || ing['found_in_dataset'] == false;
+          final isUnknown =
+              status == 'unknown' || ing['found_in_dataset'] == false;
           ing['found_in_dataset'] ??= !isUnknown;
-          
+
           if (isUnknown) {
             unknownList.add(name);
             unknownCount++;
           }
-          
-          // Petakan metadata keamanan skincare (comedogenic, allergen, pregnancy, origin, bpom)
+
           ing['comedogenic_rating'] ??= ing['comedogenic'];
           ing['is_allergen'] ??= ing['allergen'];
-          ing['unsafe_for_pregnancy'] ??= ing['pregnancy_safe'] == false || ing['unsafe_for_pregnancy'];
+          ing['unsafe_for_pregnancy'] ??=
+              ing['pregnancy_safe'] == false || ing['unsafe_for_pregnancy'];
           ing['dataset_origin'] ??= ing['origin'];
           ing['dataset_harmful'] ??= ing['harmful'];
           ing['dataset_bpom_warning'] ??= ing['bpom_warning'];
         }
-        
+
         mergedData['expert_analysis'] = {
           'warnings_found': flags.length,
-          'total_ingredients_identified': matchedIngredients.length - unknownCount,
+          'total_ingredients_identified':
+              matchedIngredients.length - unknownCount,
           'total_unknown': unknownCount,
           'flags': flags,
           'unknown_list': unknownList,
         };
       }
-      
-      if (mergedData['ai_analysis'] == null || mergedData['ai_analysis'] is! Map || (mergedData['ai_analysis']['text'] == null && mergedData['ai_analysis']['model_output'] == null)) {
+
+      if (mergedData['ai_analysis'] == null ||
+          mergedData['ai_analysis'] is! Map ||
+          (mergedData['ai_analysis']['text'] == null &&
+              mergedData['ai_analysis']['model_output'] == null)) {
         mergedData['ai_analysis'] = {
           'text': mergedData['recommendation'] ?? mergedData['summary'],
           'model': 'Dataset RAG',
@@ -220,27 +302,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal ambil detail lengkap, menampilkan data ringkas. ${e.toString().replaceAll('Exception: ', '')}')),
+        SnackBar(
+          content: Text(
+            'Gagal ambil detail lengkap, menampilkan data ringkas. ${e.toString().replaceAll('Exception: ', '')}',
+          ),
+        ),
       );
       _openResultScreen(_buildFallbackAnalysisData(item));
     }
   }
 
+  // ── Filter ───────────────────────────────────────────────────────────────
+
   List<ScanHistoryItem> get _filteredItems {
-    List<ScanHistoryItem> items = _allItems;
-
-    // Filter chips removed
-
-    // Apply search
-    if (_searchQuery.isNotEmpty) {
-      items = items
-          .where((item) =>
-              item.productName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              item.brand.toLowerCase().contains(_searchQuery.toLowerCase()))
-          .toList();
-    }
-
-    return items;
+    if (_searchQuery.isEmpty) return _allItems;
+    return _allItems
+        .where((item) =>
+            item.productBrand
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            item.productCategory
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()))
+        .toList();
   }
 
   @override
@@ -249,6 +333,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.dispose();
   }
 
+  // ── Build ────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -256,33 +342,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Fixed header section
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
               child: Column(
                 children: [
-                  // Top App Bar
                   _buildAppBar(),
                   const SizedBox(height: 20),
-                  // Search Bar
                   _buildSearchBar(),
                 ],
               ),
             ),
-            // Scrollable list section
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.primaryGreen))
                   : _errorMessage != null
-                      ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
+                      ? Center(
+                          child: Text(_errorMessage!,
+                              style: const TextStyle(color: Colors.red)))
                       : _filteredItems.isEmpty
                           ? _buildEmptyState()
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                              itemCount: _filteredItems.length,
-                              itemBuilder: (context, index) {
-                                return _buildHistoryCard(_filteredItems[index], index);
-                              },
+                          : RefreshIndicator(
+                              color: AppColors.primaryGreen,
+                              onRefresh: _fetchHistory,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0),
+                                itemCount: _filteredItems.length,
+                                itemBuilder: (context, index) {
+                                  return _buildHistoryCard(
+                                      _filteredItems[index], index);
+                                },
+                              ),
                             ),
             ),
           ],
@@ -293,26 +386,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildAppBar() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Image.asset(
-              'assets/images/logo3_home.png',
-              width: 32,
-              height: 32,
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'Scan History',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
-              ),
-            ),
-          ],
+        Image.asset('assets/images/logo3_home.png', width: 32, height: 32),
+        const SizedBox(width: 10),
+        const Text(
+          'Scan History',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textDark,
+          ),
         ),
+        const Spacer(),
+        if (!_isLoading)
+          Text(
+            '${_allItems.length} scan',
+            style: const TextStyle(fontSize: 13, color: AppColors.textGray),
+          ),
       ],
     );
   }
@@ -332,55 +422,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
       child: TextField(
         controller: _searchController,
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
+        onChanged: (value) => setState(() => _searchQuery = value),
         decoration: InputDecoration(
-          hintText: 'Search your scans...',
+          hintText: 'Cari brand atau kategori produk...',
           hintStyle: TextStyle(
-            color: Colors.grey.shade400,
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: Colors.grey.shade400,
-            size: 22,
-          ),
+              color: Colors.grey.shade400,
+              fontSize: 15,
+              fontWeight: FontWeight.w400),
+          prefixIcon:
+              Icon(Icons.search, color: Colors.grey.shade400, size: 22),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey.shade400, size: 20),
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                    });
-                  },
+                  icon: Icon(Icons.clear,
+                      color: Colors.grey.shade400, size: 20),
+                  onPressed: () => setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                  }),
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
   }
 
   Widget _buildHistoryCard(ScanHistoryItem item, int index) {
+    final (color, icon) = _styleFromCategory(item.productCategory);
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 350 + (index * 80)),
       curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
-        );
-      },
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(0, 20 * (1 - value)),
+        child: Opacity(opacity: value, child: child),
+      ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
@@ -404,52 +483,74 @@ class _HistoryScreenState extends State<HistoryScreen> {
               padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  // Product Image / Thumbnail
-                  _buildProductThumbnail(item),
+                  // ── Thumbnail (kategori-based) ───────────────────────
+                  _buildThumbnail(color, icon),
                   const SizedBox(width: 14),
-                  // Product Info
+                  // ── Info ────────────────────────────────────────────
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.productName,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
+                        // Brand name (judul utama)
                         Text(
-                          item.brand,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textGray,
-                            fontWeight: FontWeight.w500,
+                          item.productBrand,
+                          style: const TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                            height: 1.2,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 5),
+                        // Category badge
+                        if (item.productCategory.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: color.withValues(alpha: 0.25)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(icon, size: 10, color: color),
+                                const SizedBox(width: 4),
+                                Text(
+                                  item.productCategory,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Text(
+                            'Kategori tidak dipilih',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade400,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
                         const SizedBox(height: 6),
+                        // Date
                         Row(
                           children: [
-                            Icon(
-                              Icons.calendar_today_outlined,
-                              size: 13,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(width: 5),
+                            Icon(Icons.calendar_today_outlined,
+                                size: 12, color: Colors.grey.shade400),
+                            const SizedBox(width: 4),
                             Text(
                               item.date,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 color: Colors.grey.shade400,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -460,11 +561,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey.shade300,
-                    size: 22,
-                  ),
+                  Icon(Icons.chevron_right,
+                      color: Colors.grey.shade300, size: 22),
                 ],
               ),
             ),
@@ -474,22 +572,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildProductThumbnail(ScanHistoryItem item) {
-    final bool isDark = item.imageColor.computeLuminance() < 0.4;
+  Widget _buildThumbnail(Color color, IconData icon) {
     return Container(
       width: 72,
       height: 72,
       decoration: BoxDecoration(
-        color: item.imageColor,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Center(
-        child: Icon(
-          item.imageIcon,
-          size: 32,
-          color: isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black.withValues(alpha: 0.35),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.85),
+            color.withValues(alpha: 0.55),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
+      child: Icon(icon, size: 30, color: Colors.white.withValues(alpha: 0.9)),
     );
   }
 
@@ -501,36 +606,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Container(
             width: 80,
             height: 80,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.surfaceGreen,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.history,
-              size: 40,
-              color: AppColors.primaryGreenDark,
-            ),
+            child: const Icon(Icons.history,
+                size: 40, color: AppColors.primaryGreenDark),
           ),
           const SizedBox(height: 20),
           const Text(
-            'No scans found',
+            'Belum ada scan',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textDark),
           ),
           const SizedBox(height: 8),
           Text(
-            'Try adjusting your search or filter.',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textGray,
-            ),
+            _searchQuery.isNotEmpty
+                ? 'Tidak ada hasil untuk "$_searchQuery"'
+                : 'Mulai scan produk skincare pertama Anda!',
+            style:
+                const TextStyle(fontSize: 14, color: AppColors.textGray),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
-
 }
