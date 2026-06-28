@@ -241,4 +241,66 @@ class AuthService {
       _isGoogleLoginInProgress = false;
     }
   }
+
+  /// Memverifikasi email untuk lupa password
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiService.baseUrl}/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return data;
+      } else {
+        throw Exception(
+          data['detail'] ?? data['message'] ?? 'Gagal memverifikasi email',
+        );
+      }
+    } on SocketException {
+      throw Exception('Tidak dapat terhubung ke server. Pastikan backend aktif.');
+    } catch (e) {
+      if (e is http.ClientException) {
+        throw Exception('Koneksi terputus. Pastikan internet aktif dan backend berjalan.');
+      }
+      if (e.toString().contains('Exception:')) {
+        throw Exception(e.toString().replaceAll('Exception: ', ''));
+      }
+      throw Exception('Terjadi kesalahan: $e');
+    }
+  }
+
+  /// Mereset password pengguna
+  static Future<Map<String, dynamic>> resetPassword(String email, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiService.baseUrl}/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'new_password': newPassword}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return data;
+      } else {
+        throw Exception(
+          data['detail'] ?? data['message'] ?? 'Gagal mereset password',
+        );
+      }
+    } on SocketException {
+      throw Exception('Tidak dapat terhubung ke server. Pastikan backend aktif.');
+    } catch (e) {
+      if (e is http.ClientException) {
+        throw Exception('Koneksi terputus. Pastikan internet aktif dan backend berjalan.');
+      }
+      if (e.toString().contains('Exception:')) {
+        throw Exception(e.toString().replaceAll('Exception: ', ''));
+      }
+      throw Exception('Terjadi kesalahan: $e');
+    }
+  }
 }

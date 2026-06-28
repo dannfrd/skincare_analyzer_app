@@ -93,6 +93,243 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showForgotPasswordDialog() {
+    final resetEmailController = TextEditingController(text: _emailController.text.trim());
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final dialogFormKey = GlobalKey<FormState>();
+    int step = 1; // 1: Input email, 2: Input new password
+    bool dialogLoading = false;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    String? errorMessage;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Form(
+                key: dialogFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      step == 1 ? 'Lupa Password' : 'Buat Password Baru',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      step == 1
+                          ? 'Masukkan email akun Anda untuk memverifikasi dan mereset password.'
+                          : 'Silakan masukkan password baru untuk akun ${resetEmailController.text}.',
+                      style: TextStyle(fontSize: 14, color: AppColors.textGray),
+                    ),
+                    const SizedBox(height: 20),
+                    if (errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                errorMessage!,
+                                style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (step == 1) ...[
+                      Text(
+                        'Email',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textGray,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: resetEmailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: _buildInputDecoration(hintText: 'your@email.com'),
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return 'Masukkan email Anda';
+                          if (!val.contains('@')) return 'Email tidak valid';
+                          return null;
+                        },
+                      ),
+                    ] else ...[
+                      Text(
+                        'Password Baru',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textGray,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: newPasswordController,
+                        obscureText: obscureNew,
+                        decoration: _buildInputDecoration(
+                          hintText: 'Minimal 6 karakter',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: AppColors.textGray,
+                              size: 20,
+                            ),
+                            onPressed: () => setModalState(() => obscureNew = !obscureNew),
+                          ),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.length < 6) return 'Password minimal 6 karakter';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Konfirmasi Password',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textGray,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: confirmPasswordController,
+                        obscureText: obscureConfirm,
+                        decoration: _buildInputDecoration(
+                          hintText: 'Ulangi password baru',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: AppColors.textGray,
+                              size: 20,
+                            ),
+                            onPressed: () => setModalState(() => obscureConfirm = !obscureConfirm),
+                          ),
+                        ),
+                        validator: (val) {
+                          if (val != newPasswordController.text) return 'Password tidak cocok';
+                          return null;
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: dialogLoading
+                            ? null
+                            : () async {
+                                if (!dialogFormKey.currentState!.validate()) return;
+                                setModalState(() {
+                                  dialogLoading = true;
+                                  errorMessage = null;
+                                });
+
+                                try {
+                                  if (step == 1) {
+                                    await AuthService.forgotPassword(resetEmailController.text.trim());
+                                    setModalState(() {
+                                      step = 2;
+                                      dialogLoading = false;
+                                    });
+                                  } else {
+                                    await AuthService.resetPassword(
+                                      resetEmailController.text.trim(),
+                                      newPasswordController.text,
+                                    );
+                                    if (!bottomSheetContext.mounted) return;
+                                    Navigator.pop(bottomSheetContext);
+                                    _emailController.text = resetEmailController.text.trim();
+                                    _passwordController.text = newPasswordController.text;
+                                    ScaffoldMessenger.of(this.context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Password berhasil diubah. Silakan klik Login.'),
+                                        backgroundColor: AppColors.primaryGreen,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  setModalState(() {
+                                    dialogLoading = false;
+                                    errorMessage = e.toString().replaceAll('Exception: ', '');
+                                  });
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: dialogLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : Text(
+                                step == 1 ? 'Verifikasi Email' : 'Simpan Password',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,9 +449,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             GestureDetector(
-                              onTap: () {
-                                // TODO: Forgot password
-                              },
+                              onTap: _showForgotPasswordDialog,
                               child: Text(
                                 'Forgot?',
                                 style: TextStyle(
