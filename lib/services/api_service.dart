@@ -363,4 +363,53 @@ class ApiService {
       return [];
     }
   }
+
+  /// Fetch daftar kategori produk skincare dari backend.
+  /// Backend menjadi single source of truth — tidak perlu update APK
+  /// setiap kali kategori berubah.
+  static Future<List<Map<String, dynamic>>> getCategories() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/categories'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final cats = data['categories'];
+        if (cats is List) {
+          return cats
+              .whereType<Map>()
+              .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
+              .toList();
+        }
+      }
+      return _fallbackCategories();
+    } catch (_) {
+      // Jika BE tidak bisa dijangkau, gunakan daftar statis sebagai fallback
+      return _fallbackCategories();
+    }
+  }
+
+  /// Fallback jika endpoint /categories tidak tersedia (offline / error).
+  static List<Map<String, dynamic>> _fallbackCategories() {
+    return const [
+      {'id': 'toner',       'name': 'Toner'},
+      {'id': 'serum',       'name': 'Serum'},
+      {'id': 'moisturizer', 'name': 'Moisturizer'},
+      {'id': 'sunscreen',   'name': 'Sunscreen'},
+      {'id': 'cleanser',    'name': 'Cleanser'},
+      {'id': 'exfoliator',  'name': 'Exfoliator'},
+      {'id': 'eye_cream',   'name': 'Eye Cream'},
+      {'id': 'lip_care',    'name': 'Lip Care'},
+      {'id': 'mask',        'name': 'Mask'},
+      {'id': 'body_lotion', 'name': 'Body Lotion'},
+      {'id': 'body_wash',   'name': 'Body Wash'},
+      {'id': 'essence',     'name': 'Essence'},
+      {'id': 'primer',      'name': 'Primer'},
+      {'id': 'bb_cc_cream', 'name': 'BB / CC Cream'},
+    ];
+  }
 }

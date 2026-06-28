@@ -5,23 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/scan_payload.dart';
+import 'package:skincare_analyzer_app/services/api_service.dart';
 
-const List<String> _kProductCategories = [
-  'Toner',
-  'Serum',
-  'Moisturizer',
-  'Sunscreen',
-  'Cleanser',
-  'Exfoliator',
-  'Eye Cream',
-  'Lip Care',
-  'Mask',
-  'Body Lotion',
-  'Body Wash',
-  'Essence',
-  'Primer',
-  'BB / CC Cream',
-];
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -38,12 +23,31 @@ class _ScanScreenState extends State<ScanScreen> {
 
   String? _selectedCategory;
 
+  // Categories loaded from backend
+  List<Map<String, dynamic>> _categories = [];
+  bool _isLoadingCategories = true;
+
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showImageSourceActionSheet();
     });
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await ApiService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _isLoadingCategories = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingCategories = false);
+    }
   }
 
   void _showImageSourceActionSheet() {
@@ -380,6 +384,12 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Widget _buildCategoryDropdown() {
+    // Nama-nama kategori dari BE
+    final categoryNames = _categories
+        .map((c) => c['name']?.toString() ?? '')
+        .where((n) => n.isNotEmpty)
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -391,47 +401,68 @@ class _ScanScreenState extends State<ScanScreen> {
               color: AppColors.textDark),
         ),
         const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedCategory,
-          hint: const Text(
-            'Pilih kategori produk',
-            style: TextStyle(fontSize: 13, color: Color(0xFFAFB8C1)),
+        if (_isLoadingCategories)
+          // Loading state
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(9),
+              color: Colors.white,
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+            ),
+          )
+        else
+          DropdownButtonFormField<String>(
+            initialValue: _selectedCategory,
+            hint: const Text(
+              'Pilih kategori produk',
+              style: TextStyle(fontSize: 13, color: Color(0xFFAFB8C1)),
+            ),
+            isExpanded: true,
+            icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                color: AppColors.textGray, size: 20),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.category_outlined,
+                  size: 17, color: AppColors.textGray),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(9),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(9),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(9),
+                borderSide: const BorderSide(
+                    color: AppColors.primaryGreen, width: 1.5),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+            dropdownColor: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            items: categoryNames.map((name) {
+              return DropdownMenuItem<String>(
+                value: name,
+                child: Text(name),
+              );
+            }).toList(),
+            onChanged: (val) => setState(() => _selectedCategory = val),
           ),
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textGray, size: 20),
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.category_outlined,
-                size: 17, color: AppColors.textGray),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(9),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(9),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(9),
-              borderSide:
-                  const BorderSide(color: AppColors.primaryGreen, width: 1.5),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-          ),
-          style: const TextStyle(fontSize: 13, color: AppColors.textDark),
-          dropdownColor: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          items: _kProductCategories.map((cat) {
-            return DropdownMenuItem<String>(
-              value: cat,
-              child: Text(cat),
-            );
-          }).toList(),
-          onChanged: (val) => setState(() => _selectedCategory = val),
-        ),
       ],
     );
   }

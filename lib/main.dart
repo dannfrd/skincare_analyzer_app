@@ -12,6 +12,7 @@ import 'screens/edit_profile_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation.dart';
 import 'screens/notification_screen.dart';
+import 'screens/permission_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/scan_progress_screen.dart';
 import 'screens/scan_screen.dart';
@@ -75,6 +76,7 @@ class SkincareAnalyzerApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
+        '/permissions': (context) => const PermissionScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/main': (context) => const MainNavigation(),

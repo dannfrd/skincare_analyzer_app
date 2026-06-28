@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/services/permission_service.dart';
 import 'package:skincare_analyzer_app/services/user_session.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -55,17 +55,20 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initializeApp() async {
     // Attempt to load existing user session
     await UserSession.loadSession();
-    
+
+    // Check if we've ever asked for permissions
+    final hasAsked = await PermissionService.hasRequestedBefore();
+
     Future.delayed(const Duration(milliseconds: 400), () {
-      _progressController.forward().then((_) {
-        if (mounted) {
-          if (UserSession.isLoggedIn) {
-            Navigator.pushReplacementNamed(context, '/main');
-          } else {
-            Navigator.pushReplacementNamed(context, '/login');
-          }
-        }
-      });
+      if (!mounted) return;
+      if (!hasAsked) {
+        // First launch → show permission screen
+        Navigator.pushReplacementNamed(context, '/permissions');
+      } else if (UserSession.isLoggedIn) {
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     });
   }
 

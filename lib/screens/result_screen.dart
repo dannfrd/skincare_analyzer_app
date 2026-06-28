@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ResultScreen extends StatefulWidget {
   final Map<String, dynamic> analysisData;
@@ -899,22 +899,6 @@ class _ResultScreenState extends State<ResultScreen> {
                 letterSpacing: 0.1,
               ),
             ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0E6FF),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Dataset INCIDecoder',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF7C3AED),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -963,7 +947,7 @@ class _ResultScreenState extends State<ResultScreen> {
         const SizedBox(height: 4),
         Center(
           child: Text(
-            '💡 Produk serupa berdasarkan kemiripan semantik bahan (dataset INCIDecoder)',
+            '💡 Produk serupa berdasarkan kemiripan semantik komposisi bahan aktif',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 10.5,
@@ -1033,7 +1017,6 @@ class _ResultScreenState extends State<ResultScreen> {
   Widget _buildRecommendationCard(
       Map<String, dynamic> product, int index) {
     final name = _asString(product['name']) ?? 'Unknown Product';
-    final brand = _asString(product['brand']) ?? '';
     final pct = product['similarity_pct'] is int
         ? product['similarity_pct'] as int
         : int.tryParse(product['similarity_pct']?.toString() ?? '') ?? 0;
@@ -1112,16 +1095,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (brand.isNotEmpty)
-                      Text(
-                        brand.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: color,
-                          letterSpacing: 0.7,
-                        ),
-                      ),
+                    // Brand label hidden to show generic product recommendations
                     const SizedBox(height: 2),
                     Text(
                       name,
@@ -1162,7 +1136,6 @@ class _ResultScreenState extends State<ResultScreen> {
 
   void _showRecommendationDetailsSheet(Map<String, dynamic> product) {
     final name = _asString(product['name']) ?? 'Unknown Product';
-    final brand = _asString(product['brand']) ?? '';
     final pct = product['similarity_pct'] is int
         ? product['similarity_pct'] as int
         : int.tryParse(product['similarity_pct']?.toString() ?? '') ?? 0;
@@ -1218,16 +1191,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (brand.isNotEmpty)
-                          Text(
-                            brand.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: color,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
+                        // Brand label hidden in detail sheet
                         const SizedBox(height: 3),
                         Text(
                           name,
@@ -1425,16 +1389,11 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: url));
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Link produk berhasil disalin ke clipboard!'),
-                              backgroundColor: Colors.green,
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
+                        onPressed: () async {
+                          final uri = Uri.tryParse(url);
+                          if (uri != null && await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: color,
@@ -1445,9 +1404,9 @@ class _ResultScreenState extends State<ResultScreen> {
                           ),
                           elevation: 0,
                         ),
-                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        icon: const Icon(Icons.open_in_browser_rounded, size: 18),
                         label: const Text(
-                          'Salin Link',
+                          'Lihat Produk',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
