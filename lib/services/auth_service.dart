@@ -217,7 +217,9 @@ class AuthService {
         );
       }
 
-      throw Exception('Gagal autentikasi Google: ${e.description ?? e.code.name}');
+      throw Exception(
+        'Gagal autentikasi Google: ${e.description ?? e.code.name}',
+      );
     } on FirebaseAuthException catch (e) {
       final message = (e.message ?? '').toLowerCase();
       if (e.code == 'web-context-cancelled' ||
@@ -284,10 +286,14 @@ class AuthService {
         );
       }
     } on SocketException {
-      throw Exception('Tidak dapat terhubung ke server. Pastikan backend aktif.');
+      throw Exception(
+        'Tidak dapat terhubung ke server. Pastikan backend aktif.',
+      );
     } catch (e) {
       if (e is http.ClientException) {
-        throw Exception('Koneksi terputus. Pastikan internet aktif dan backend berjalan.');
+        throw Exception(
+          'Koneksi terputus. Pastikan internet aktif dan backend berjalan.',
+        );
       }
       if (e.toString().contains('Exception:')) {
         throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -297,7 +303,10 @@ class AuthService {
   }
 
   /// Mereset password pengguna
-  static Future<Map<String, dynamic>> resetPassword(String email, String newPassword) async {
+  static Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String newPassword,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/auth/reset-password'),
@@ -315,10 +324,14 @@ class AuthService {
         );
       }
     } on SocketException {
-      throw Exception('Tidak dapat terhubung ke server. Pastikan backend aktif.');
+      throw Exception(
+        'Tidak dapat terhubung ke server. Pastikan backend aktif.',
+      );
     } catch (e) {
       if (e is http.ClientException) {
-        throw Exception('Koneksi terputus. Pastikan internet aktif dan backend berjalan.');
+        throw Exception(
+          'Koneksi terputus. Pastikan internet aktif dan backend berjalan.',
+        );
       }
       if (e.toString().contains('Exception:')) {
         throw Exception(e.toString().replaceAll('Exception: ', ''));
