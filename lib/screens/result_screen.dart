@@ -72,9 +72,9 @@ class _ResultScreenState extends State<ResultScreen> {
         _toInt(expertAnalysis['warnings_found']) ?? flags.length;
 
     final summary =
-        _asString(analysisData['summary']) ?? 'Ringkasan analisis belum tersedia.';
+        _asString(analysisData['summary']) ?? 'Summary analysis not available.';
     final recommendation =
-        _asString(analysisData['recommendation']) ?? 'Belum ada rekomendasi tambahan.';
+        _asString(analysisData['recommendation']) ?? 'No additional recommendations.';
 
     final aiText = _resolveAiText(aiAnalysis, recommendation);
     final modelUsed = _asString(aiAnalysis['model_used']) ??
@@ -92,7 +92,7 @@ class _ResultScreenState extends State<ResultScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Hasil Analisis',
+          'Analysis Result',
           style: TextStyle(
             color: AppColors.textDark,
             fontWeight: FontWeight.bold,
@@ -120,7 +120,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     const SizedBox(height: 14),
                     _buildSectionCard(
-                      title: 'Ringkasan Cepat',
+                      title: 'Quick Summary',
                       icon: Icons.insights_rounded,
                       child: Text(
                         summary,
@@ -254,7 +254,7 @@ class _ResultScreenState extends State<ResultScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Ringkasan Analisis',
+            'Quick Summary',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -264,7 +264,7 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
           const SizedBox(height: 3),
           const Text(
-            'Berdasarkan pencocokan bahan + analisis AI',
+            'Based on ingredient matching + AI analysis',
             style: TextStyle(fontSize: 12.5, color: AppColors.textGray),
           ),
           const SizedBox(height: 14),
@@ -274,21 +274,21 @@ class _ResultScreenState extends State<ResultScreen> {
             children: [
               _buildMetricChip(
                 icon: Icons.science_rounded,
-                text: '$identifiedCount bahan dikenali',
+                text: '$identifiedCount ingredients identified',
                 color: AppColors.primaryGreenDark,
                 bgColor: const Color(0xFFE8F5E9),
               ),
               if (unknownCount > 0)
                 _buildMetricChip(
                   icon: Icons.help_outline_rounded,
-                  text: '$unknownCount belum dikenali',
+                  text: '$unknownCount ingredients not identified',
                   color: const Color(0xFFB7791F),
                   bgColor: const Color(0xFFFFF8E1),
                 ),
               if (warningCount > 0)
                 _buildMetricChip(
                   icon: Icons.warning_amber_rounded,
-                  text: '$warningCount perlu perhatian',
+                  text: '$warningCount warning',
                   color: const Color(0xFFB42318),
                   bgColor: const Color(0xFFFFF0F0),
                 ),
@@ -386,17 +386,17 @@ class _ResultScreenState extends State<ResultScreen> {
   Widget _buildIngredientSection(List<Map<String, dynamic>> ingredients) {
     if (ingredients.isEmpty) {
       return _buildSectionCard(
-        title: 'Bahan Terdeteksi',
+        title: 'Ingredients Detected',
         icon: Icons.list_alt_rounded,
         child: const Text(
-          'Belum ada bahan yang terdeteksi dari hasil scan.',
+          'No ingredients detected from the scan result.',
           style: TextStyle(fontSize: 14, color: AppColors.textGray),
         ),
       );
     }
 
     return _buildSectionCard(
-      title: 'Bahan Terdeteksi (${ingredients.length})',
+      title: 'Ingredients Detected (${ingredients.length})',
       icon: Icons.list_alt_rounded,
       child: Column(children: ingredients.map(_buildIngredientTile).toList()),
     );
@@ -421,7 +421,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
     Color tone = AppColors.primaryGreenDark;
     IconData icon = Icons.check_circle_outline_rounded;
-    String statusLabel = 'Aman untuk pemakaian normal';
+    String statusLabel = 'safe for normal use';
 
     if (datasetHarmful && datasetBpomWarning != null) {
       tone = const Color(0xFFB42318);
@@ -430,27 +430,27 @@ class _ResultScreenState extends State<ResultScreen> {
     } else if (unknown && !foundInDataset) {
       tone = const Color(0xFFB7791F);
       icon = Icons.help_outline_rounded;
-      statusLabel = 'Belum ada data di dataset';
+      statusLabel = 'No data in dataset';
     } else if (notPregnancySafe) {
       tone = const Color(0xFFB42318);
       icon = Icons.pregnant_woman_rounded;
-      statusLabel = 'Perhatian khusus untuk ibu hamil';
+      statusLabel = 'Special attention for pregnant women';
     } else if (isAllergen) {
       tone = const Color(0xFFB42318);
       icon = Icons.warning_amber_rounded;
-      statusLabel = 'Potensi alergen / iritan';
+      statusLabel = 'Potential allergen / irritant';
     } else if (comedogenic >= 4) {
       tone = const Color(0xFFB42318);
       icon = Icons.error_outline_rounded;
-      statusLabel = 'Komedogenik tinggi ($comedogenic/5)';
+      statusLabel = 'High comedogenic ($comedogenic/5)';
     } else if (comedogenic == 3) {
       tone = const Color(0xFFD97706);
       icon = Icons.error_outline_rounded;
-      statusLabel = 'Komedogenik sedang ($comedogenic/5)';
+      statusLabel = 'Moderate comedogenic ($comedogenic/5)';
     } else if (foundInDataset) {
       tone = AppColors.primaryGreenDark;
       icon = Icons.check_circle_outline_rounded;
-      statusLabel = 'Bahan ditemukan di dataset';
+      statusLabel = 'Ingredient found in dataset';
     }
 
     final details = <_DetailItem>[];
@@ -569,7 +569,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Widget _buildFlagSection(List<Map<String, dynamic>> flags) {
     return _buildSectionCard(
-      title: 'Perlu Perhatian (${flags.length})',
+      title: 'Ingredients to Watch Out For (${flags.length})',
       icon: Icons.warning_amber_rounded,
       accentColor: const Color(0xFFD97706),
       child: Column(
@@ -629,14 +629,14 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Widget _buildUnknownIngredientSection(List<String> unknownIngredients) {
     return _buildSectionCard(
-      title: 'Bahan Belum Dikenali (${unknownIngredients.length})',
+      title: 'Ingredients Not Identified (${unknownIngredients.length})',
       icon: Icons.help_center_rounded,
       accentColor: const Color(0xFFB7791F),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Bahan-bahan ini tidak ditemukan di dataset kami. Kemungkinan nama INCI atau bahan lokal yang kurang umum.',
+            'Ingredients in this product were not found in our dataset. It may be an ingredient with an uncommon name or a local ingredient.',
             style: TextStyle(
               fontSize: 12.5,
               color: AppColors.textGray,
@@ -684,25 +684,15 @@ class _ResultScreenState extends State<ResultScreen> {
     final sections = _parseMarkdownSections(aiText);
 
     return _buildSectionCard(
-      title: 'Insight AI + RAG',
+      title: 'Insight AI',
       icon: Icons.auto_awesome_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              _buildSoftChip(
-                  Icons.memory_rounded, 'Model: $modelUsed', const Color(0xFF4A6FA5)),
-              _buildSoftChip(
-                  Icons.dataset_rounded, 'Sumber: RAG Dataset', AppColors.primaryGreenDark),
-            ],
-          ),
-          const SizedBox(height: 14),
+
           if (sections.isEmpty)
             const Text(
-              'Insight AI belum tersedia.',
+              'AI Insight not available.',
               style: TextStyle(fontSize: 14, color: AppColors.textGray),
             )
           else
@@ -719,7 +709,7 @@ class _ResultScreenState extends State<ResultScreen> {
                       size: 15, color: AppColors.primaryGreenDark),
                   SizedBox(width: 6),
                   Text(
-                    'Lihat analisis AI lengkap',
+                    'View Full AI Analysis',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -891,7 +881,7 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
             const SizedBox(width: 10),
             const Text(
-              'Produk Serupa',
+              'Similar Products',
               style: TextStyle(
                 fontSize: 15.5,
                 fontWeight: FontWeight.w700,
@@ -921,7 +911,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
-                    'Tidak ditemukan produk serupa dari dataset.',
+                    'No similar products found in dataset.',
                     style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textGray,
@@ -947,7 +937,7 @@ class _ResultScreenState extends State<ResultScreen> {
         const SizedBox(height: 4),
         Center(
           child: Text(
-            '💡 Produk serupa berdasarkan kemiripan semantik komposisi bahan aktif',
+            '💡 Products based on active ingredients.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 10.5,
@@ -1076,7 +1066,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '$pct% mirip',
+                        '$pct% Match',
                         style: const TextStyle(
                           fontSize: 9.5,
                           color: Colors.white,
@@ -1140,7 +1130,7 @@ class _ResultScreenState extends State<ResultScreen> {
         ? product['similarity_pct'] as int
         : int.tryParse(product['similarity_pct']?.toString() ?? '') ?? 0;
     final matched = _asStringList(product['matched_ingredients']);
-    final matchReason = _asString(product['match_reason']) ?? 'Komposisi bahan serupa';
+    final matchReason = _asString(product['match_reason']) ?? 'Similar ingredients';
     final url = _asString(product['url']) ?? '';
     final tags = _asString(product['category_tags']) ?? '';
 
@@ -1241,7 +1231,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Kecocokan Formula',
+                            'Formula Match',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.textGray,
@@ -1268,7 +1258,7 @@ class _ResultScreenState extends State<ResultScreen> {
               // Tags
               if (tags.isNotEmpty) ...[
                 const Text(
-                  'Kategori / Karakteristik',
+                  'Category / Characteristics',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -1308,7 +1298,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
               // Matched Ingredients Section
               const Text(
-                'Bahan Aktif & Serupa Yang Cocok',
+                'Ingredients That Match',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -1318,7 +1308,7 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 8),
               if (matched.isEmpty)
                 const Text(
-                  'Pencocokan bahan umum.',
+                  'No ingredients matched',
                   style: TextStyle(fontSize: 12.5, color: AppColors.textGray),
                 )
               else
@@ -1380,7 +1370,7 @@ class _ResultScreenState extends State<ResultScreen> {
                       ),
                       icon: const Icon(Icons.close, color: AppColors.textDark, size: 18),
                       label: const Text(
-                        'Tutup',
+                        'Close',
                         style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -1406,7 +1396,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         ),
                         icon: const Icon(Icons.open_in_browser_rounded, size: 18),
                         label: const Text(
-                          'Lihat Produk',
+                          'See Product',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -1456,31 +1446,7 @@ class _ResultScreenState extends State<ResultScreen> {
     return (AppColors.primaryGreenDark, Icons.spa_rounded);
   }
 
-  Widget _buildSoftChip(IconData icon, String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.09),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 5),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildBottomBar(BuildContext context) {
     return Container(
@@ -1521,7 +1487,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     )
                   : const Icon(Icons.bookmark_added_outlined),
               label: Text(
-                _isSaving ? 'Menyimpan...' : 'Simpan Hasil',
+                _isSaving ? 'Saving...' : 'Save',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -1533,7 +1499,7 @@ class _ResultScreenState extends State<ResultScreen> {
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: const Text(
-              'Scan ulang jika hasil belum sesuai',
+              'Scan again if the result is not as expected',
               style: TextStyle(
                 color: AppColors.primaryGreenDark,
                 fontWeight: FontWeight.w700,
@@ -1552,7 +1518,7 @@ class _ResultScreenState extends State<ResultScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Hasil belum tersimpan di database. Silakan ulangi analisis.',
+            'Result not saved to database. Please repeat the analysis.',
           ),
           backgroundColor: Colors.red,
         ),
@@ -1568,7 +1534,7 @@ class _ResultScreenState extends State<ResultScreen> {
     if (!saved) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Gagal menyimpan hasil ke histori. Silakan coba lagi.'),
+          content: Text('Failed to save result to history. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -1577,7 +1543,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Berhasil disimpan di Histori!'),
+        content: Text('Successfully saved to history!'),
         backgroundColor: Colors.green,
       ),
     );

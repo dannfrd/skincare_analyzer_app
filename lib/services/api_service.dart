@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import '../utils/network_helper.dart';
 import 'user_session.dart';
+import '../models/ingredient_metric.dart';
 
 /// API Service untuk komunikasi dengan backend
 /// 
@@ -412,4 +413,42 @@ class ApiService {
       {'id': 'bb_cc_cream', 'name': 'BB / CC Cream'},
     ];
   }
+
+  /// Fetch popular/scanned ingredients metrics from backend
+  static Future<List<IngredientMetric>> getIngredientMetrics({int limit = 500}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/mobile/metrics/ingredients?limit=$limit'),
+        headers: UserSession.authHeaders,
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        List<dynamic> list = [];
+        if (decoded is List) {
+          list = decoded;
+        } else if (decoded is Map<String, dynamic>) {
+          final nestedList = decoded['ingredients'] ?? decoded['data'] ?? decoded['items'];
+          if (nestedList is List) {
+            list = nestedList;
+          }
+        }
+        
+        return list
+            .map((json) {
+              if (json is Map) {
+                return IngredientMetric.fromJson(json.map((k, v) => MapEntry(k.toString(), v)));
+              }
+              return null;
+            })
+            .whereType<IngredientMetric>()
+            .toList();
+      } else {
+        throw Exception('Failed to fetch ingredient metrics: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching ingredient metrics: $e');
+    }
+  }
 }
+

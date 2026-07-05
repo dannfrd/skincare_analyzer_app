@@ -63,7 +63,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             _str(e['product_brand']) ??
             _str(product['name']) ??
             _str(e['product_name']) ??
-            'Produk Tidak Diketahui';
+            'Unknown Product';
 
         // Category: prioritize product['category'] → e['product_category']
         final category = _str(product['category']) ??
@@ -78,9 +78,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ? _formatDate(e['created_at'].toString())
               : 'Tanggal tidak diketahui',
           summary: _str(analysis['summary']) ??
-              'Ringkasan analisis belum tersedia.',
+              'Summary analysis not available.',
           recommendation: _str(analysis['recommendation']) ??
-              'Belum ada rekomendasi tambahan.',
+              'No additional recommendations.',
         );
       }).toList();
 
@@ -216,7 +216,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Membuka detail analisis...')),
+      const SnackBar(content: Text('Opening analysis details...')),
     );
 
     try {
@@ -304,7 +304,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Gagal ambil detail lengkap, menampilkan data ringkas. ${e.toString().replaceAll('Exception: ', '')}',
+            'Failed to fetch full details, displaying summary data. ${e.toString().replaceAll('Exception: ', '')}',
           ),
         ),
       );
@@ -424,7 +424,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value),
         decoration: InputDecoration(
-          hintText: 'Cari brand atau kategori produk...',
+          hintText: 'Search product brand or category...',
           hintStyle: TextStyle(
               color: Colors.grey.shade400,
               fontSize: 15,
@@ -533,7 +533,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           )
                         else
                           Text(
-                            'Kategori tidak dipilih',
+                            'No category selected',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade400,
@@ -624,8 +624,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 8),
           Text(
             _searchQuery.isNotEmpty
-                ? 'Tidak ada hasil untuk "$_searchQuery"'
-                : 'Mulai scan produk skincare pertama Anda!',
+                ? 'No results for "$_searchQuery"'
+                : 'Scan your first skincare product!',
             style:
                 const TextStyle(fontSize: 14, color: AppColors.textGray),
             textAlign: TextAlign.center,

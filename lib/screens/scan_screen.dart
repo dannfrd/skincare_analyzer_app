@@ -64,7 +64,7 @@ class _ScanScreenState extends State<ScanScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Pilih Sumber Gambar',
+                  'Select Image Source',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -75,7 +75,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 ListTile(
                   leading:
                       const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
-                  title: const Text('Kamera',
+                  title: const Text('Camera',
                       style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(context);
@@ -85,7 +85,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 ListTile(
                   leading: const Icon(Icons.photo_library,
                       color: AppColors.primaryGreen),
-                  title: const Text('Galeri',
+                  title: const Text('Gallery',
                       style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(context);
@@ -119,7 +119,7 @@ class _ScanScreenState extends State<ScanScreen> {
       if (!mounted) return;
       setState(() => _isCameraOpening = false);
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error membuka kamera: $e')));
+          .showSnackBar(SnackBar(content: Text('Error opening camera: $e')));
     }
   }
 
@@ -133,7 +133,7 @@ class _ScanScreenState extends State<ScanScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error memilih gambar: $e')));
+          .showSnackBar(SnackBar(content: Text('Error selecting image: $e')));
     }
   }
 
@@ -145,13 +145,13 @@ class _ScanScreenState extends State<ScanScreen> {
         compressQuality: 100,
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: 'Crop Gambar',
+            toolbarTitle: 'Crop Image',
             toolbarColor: AppColors.primaryGreen,
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
           ),
-          IOSUiSettings(title: 'Crop Gambar'),
+          IOSUiSettings(title: 'Crop Image'),
         ],
       );
       if (croppedFile != null && mounted) {
@@ -160,7 +160,7 @@ class _ScanScreenState extends State<ScanScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error crop gambar: $e')));
+          .showSnackBar(SnackBar(content: Text('Error cropping image: $e')));
     }
   }
 
@@ -229,8 +229,8 @@ class _ScanScreenState extends State<ScanScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
                   _capturedImage != null
-                      ? 'Tinjau foto di atas, isi info produk, lalu mulai analisis.'
-                      : 'Pilih sumber gambar untuk memindai label produk skincare.',
+                      ? 'Review the image above, fill in the product information, then start the analysis.'
+                      : 'Select an image source to scan the product label.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: AppColors.textGray, fontSize: 13),
@@ -292,7 +292,7 @@ class _ScanScreenState extends State<ScanScreen> {
                         ),
                         icon: const Icon(Icons.photo_library_outlined,
                             size: 18),
-                        label: const Text('Galeri',
+                        label: const Text('Gallery',
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
@@ -300,7 +300,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '💡 Tip: Foto dekat bagian "Ingredients / Komposisi", hindari pantulan cahaya.',
+                  '💡 Tips: Take photos near the "Ingredients / Composition" section, avoid light reflections.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: Colors.grey.shade500,
@@ -373,7 +373,7 @@ class _ScanScreenState extends State<ScanScreen> {
           _buildProductField(
             controller: _productBrandController,
             label: 'Brand',
-            hint: 'cth. Skintific, Azarine, Some By Mi...',
+            hint: 'ex. Skintific, Azarine, Some By Mi...',
             icon: Icons.storefront_outlined,
           ),
           const SizedBox(height: 12),
@@ -394,7 +394,7 @@ class _ScanScreenState extends State<ScanScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Kategori',
+          'Category',
           style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -425,7 +425,7 @@ class _ScanScreenState extends State<ScanScreen> {
           DropdownButtonFormField<String>(
             initialValue: _selectedCategory,
             hint: const Text(
-              'Pilih kategori produk',
+              'Select product category',
               style: TextStyle(fontSize: 13, color: Color(0xFFAFB8C1)),
             ),
             isExpanded: true,
@@ -530,7 +530,7 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
           const SizedBox(height: 20),
           const Text(
-            'Scan Label Produk',
+            'Scan Product Label',
             style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -538,7 +538,7 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Gunakan kamera atau pilih gambar\nuntuk menganalisis bahan skincare.',
+            'Use the camera or select an image\nto analyze skincare ingredients.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textGray, fontSize: 13),
           ),
@@ -549,7 +549,7 @@ class _ScanScreenState extends State<ScanScreen> {
               ElevatedButton.icon(
                 onPressed: _openCamera,
                 icon: const Icon(Icons.camera_alt),
-                label: const Text('Kamera'),
+                label: const Text('Camera'),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: AppColors.primaryGreen,
@@ -563,7 +563,7 @@ class _ScanScreenState extends State<ScanScreen> {
               OutlinedButton.icon(
                 onPressed: _pickFromGallery,
                 icon: const Icon(Icons.photo_library),
-                label: const Text('Galeri'),
+                label: const Text('Gallery'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryGreen,
                   side: const BorderSide(color: AppColors.primaryGreen),
@@ -590,7 +590,7 @@ class _ScanScreenState extends State<ScanScreen> {
           children: [
             Icon(Icons.tips_and_updates, color: AppColors.primaryGreenDark),
             SizedBox(width: 8),
-            Text('Tips Scan', style: TextStyle(fontSize: 17)),
+            Text('Scan Tips', style: TextStyle(fontSize: 17)),
           ],
         ),
         content: const Column(
@@ -599,29 +599,29 @@ class _ScanScreenState extends State<ScanScreen> {
           children: [
             _TipItem(
               icon: Icons.crop_free,
-              text: 'Pastikan bagian "Ingredients / Komposisi" memenuhi frame.',
+              text: 'Ensure the "Ingredients" section fills the frame.',
             ),
             SizedBox(height: 8),
             _TipItem(
               icon: Icons.wb_sunny_outlined,
-              text: 'Hindari pantulan cahaya / glare pada kemasan.',
+              text: 'Avoid light reflections / glare on the packaging.',
             ),
             SizedBox(height: 8),
             _TipItem(
               icon: Icons.center_focus_strong_outlined,
-              text: 'Foto dari jarak dekat (10–20 cm) agar teks tajam.',
+              text: 'Take photos from a close distance (10–20 cm) for sharp text.',
             ),
             SizedBox(height: 8),
             _TipItem(
               icon: Icons.crop,
-              text: 'Gunakan fitur crop untuk memotong bagian ingredients saja.',
+              text: 'Use the crop feature to isolate the ingredients section.',
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Mengerti',
+            child: const Text('Got It',
                 style: TextStyle(color: AppColors.primaryGreenDark)),
           ),
         ],

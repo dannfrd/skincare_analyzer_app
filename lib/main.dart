@@ -17,6 +17,9 @@ import 'screens/register_screen.dart';
 import 'screens/scan_progress_screen.dart';
 import 'screens/scan_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/skincare_tips_screen.dart';
+import 'screens/tip_detail_screen.dart';
+import 'screens/ingredient_database_screen.dart';
 import 'services/api_service.dart';
 import 'services/fcm_service.dart';
 
@@ -84,6 +87,9 @@ class SkincareAnalyzerApp extends StatelessWidget {
         '/notifications': (context) => const NotificationScreen(),
         '/connection-test': (context) => const ConnectionTestScreen(),
         '/edit-profile': (context) => const EditProfileScreen(),
+        '/tips': (context) => const SkincareTipsScreen(),
+        '/tip-detail': (context) => const TipDetailScreen(),
+        '/ingredients': (context) => const IngredientDatabaseScreen(),
         // Progress and Results typically get pushed with arguments rather than simple routes
       },
       onGenerateRoute: (settings) {
