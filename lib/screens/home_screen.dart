@@ -121,7 +121,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Understand your products with the power of\nartificial intelligence.',
+                            'Helping you understand your skin better every day.',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textGray,
@@ -133,7 +133,7 @@ class HomeScreen extends StatelessWidget {
                         right: -10,
                         bottom: -10,
                         child: Icon(
-                          Icons.science,
+                          Icons.spa,
                           size: 80,
                           color: AppColors.primaryGreen.withOpacity(0.2),
                         ),
@@ -188,7 +188,7 @@ class HomeScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Analyze ingredients instantly to find potential\nirritants or benefits.',
+                              'Analyze ingredients instantly\nto discover what works best for your skin.',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: AppColors.textGray,
@@ -245,15 +245,21 @@ class HomeScreen extends StatelessWidget {
                       child: _buildDiscoverCard(
                         icon: Icons.menu_book,
                         title: 'Ingredient\nDatabase',
-                        subtitle: 'Search 10k+ items',
+                        subtitle: 'Search 100+ items',
+                        onTap: () {
+                          Navigator.pushNamed(context, '/ingredients');
+                        },
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildDiscoverCard(
                         icon: Icons.lightbulb_outline,
-                        title: 'Skincare Tips\n',
-                        subtitle: 'Expert advice',
+                        title: 'Skincare\nTips',
+                        subtitle: 'For Healthier Skin',
+                        onTap: () {
+                          Navigator.pushNamed(context, '/tips');
+                        },
                       ),
                     ),
                   ],
@@ -323,9 +329,13 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDiscoverCard({required IconData icon, required String title, required String subtitle}) {
+  Widget _buildDiscoverCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardLight,
         borderRadius: BorderRadius.circular(16),
@@ -337,35 +347,45 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceGreen,
-              borderRadius: BorderRadius.circular(8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceGreen,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: AppColors.primaryGreenDark),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textGray,
+                  ),
+                ),
+              ],
             ),
-            child: Icon(icon, color: AppColors.primaryGreenDark),
           ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textGray,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

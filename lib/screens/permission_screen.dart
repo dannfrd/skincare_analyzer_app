@@ -25,8 +25,8 @@ class _PermissionScreenState extends State<PermissionScreen>
     _PermissionItem(
       permission: Permission.camera,
       icon: Icons.camera_alt_rounded,
-      title: 'Kamera',
-      description: 'Untuk memfoto label bahan produk skincare secara langsung.',
+      title: 'Camera',
+      description: 'To take a photo of the product ingredient label directly.',
       color: const Color(0xFF4CB35B),
       bgColor: const Color(0xFFE8F6EA),
       required: true,
@@ -34,8 +34,8 @@ class _PermissionScreenState extends State<PermissionScreen>
     _PermissionItem(
       permission: Permission.photos,
       icon: Icons.photo_library_rounded,
-      title: 'Galeri / Foto',
-      description: 'Untuk memilih foto produk dari galeri perangkat Anda.',
+      title: 'Gallery/Photos',
+      description:  'To select product photos from your device gallery.',
       color: const Color(0xFF4A6FA5),
       bgColor: const Color(0xFFE8F0FB),
       required: true,
@@ -43,8 +43,8 @@ class _PermissionScreenState extends State<PermissionScreen>
     _PermissionItem(
       permission: Permission.notification,
       icon: Icons.notifications_active_rounded,
-      title: 'Notifikasi',
-      description: 'Untuk mengirim pembaruan analisis dan tips skincare.',
+      title: 'Notifications',
+      description: 'To receive analysis updates and skincare tips.',
       color: const Color(0xFFD97706),
       bgColor: const Color(0xFFFFF8E1),
       required: false,
@@ -133,8 +133,8 @@ class _PermissionScreenState extends State<PermissionScreen>
           ],
         ),
         content: const Text(
-          'Kamera dan Galeri diperlukan untuk memindai produk skincare. '
-          'Buka pengaturan untuk mengaktifkan izin secara manual.',
+          'Camera and Gallery are required to scan product ingredients. '
+          'Open settings to enable permissions manually.',
           style: TextStyle(fontSize: 14, height: 1.5),
         ),
         actions: [
@@ -143,7 +143,7 @@ class _PermissionScreenState extends State<PermissionScreen>
               Navigator.pop(context);
               _navigateNext(); // Skip — let user proceed with limited features
             },
-            child: const Text('Lewati', style: TextStyle(color: Colors.grey)),
+            child: const Text('Skip', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -156,7 +156,7 @@ class _PermissionScreenState extends State<PermissionScreen>
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Buka Pengaturan'),
+            child: const Text('Open Settings'),
           ),
         ],
       ),
@@ -216,7 +216,7 @@ class _PermissionScreenState extends State<PermissionScreen>
 
                   const Center(
                     child: Text(
-                      'Izin Aplikasi',
+                      'Application Permissions',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
@@ -228,7 +228,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      'Dermify memerlukan beberapa izin\nuntuk berfungsi dengan optimal.',
+                      'Dermify requires several permissions to function optimally.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14.5,
@@ -274,7 +274,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Data Anda aman. Izin hanya digunakan untuk fungsionalitas aplikasi dan tidak dibagikan ke pihak ketiga.',
+                            'Your data is safe. Permissions are only used for application functionality and are not shared with third parties.',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: AppColors.primaryGreenDark,
@@ -314,7 +314,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                               ),
                             )
                           : const Text(
-                              'Izinkan & Lanjutkan',
+                              'Allow & Continue',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -333,7 +333,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                             _navigateNext();
                           },
                     child: const Text(
-                      'Lewati untuk sekarang',
+                      'Skip for now',
                       style: TextStyle(
                         color: AppColors.textGray,
                         fontSize: 13,
@@ -390,13 +390,13 @@ class _PermissionCard extends StatelessWidget {
     Widget? badge;
     if (isGranted) {
       badge = _StatusBadge(
-        label: 'Diizinkan',
+        label: 'Granted',
         color: const Color(0xFF4CB35B),
         icon: Icons.check_circle_rounded,
       );
     } else if (isDenied) {
       badge = _StatusBadge(
-        label: 'Ditolak',
+        label: 'Denied',
         color: const Color(0xFFB42318),
         icon: Icons.cancel_rounded,
       );
@@ -457,7 +457,7 @@ class _PermissionCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
-                          'Wajib',
+                          'Required',
                           style: TextStyle(
                             fontSize: 9.5,
                             color: Color(0xFFB42318),
