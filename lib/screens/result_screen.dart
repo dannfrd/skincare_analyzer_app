@@ -72,9 +72,9 @@ class _ResultScreenState extends State<ResultScreen> {
         _toInt(expertAnalysis['warnings_found']) ?? flags.length;
 
     final summary =
-        _asString(analysisData['summary']) ?? 'Summary analysis not available.';
+        _cleanMarkdownSymbols(_asString(analysisData['summary']) ?? 'Summary analysis not available.');
     final recommendation =
-        _asString(analysisData['recommendation']) ?? 'No additional recommendations.';
+        _cleanMarkdownSymbols(_asString(analysisData['recommendation']) ?? 'No additional recommendations.');
 
     final aiText = _resolveAiText(aiAnalysis, recommendation);
     final modelUsed = _asString(aiAnalysis['model_used']) ??
@@ -455,12 +455,12 @@ class _ResultScreenState extends State<ResultScreen> {
 
     final details = <_DetailItem>[];
     if (datasetDescription != null && datasetDescription.isNotEmpty) {
-      details.add(_DetailItem('📖', _clip(datasetDescription, maxLen: 160)));
+      details.add(_DetailItem('📖', _cleanMarkdownSymbols(_clip(datasetDescription, maxLen: 160))));
     } else if (description != null && description.isNotEmpty) {
-      details.add(_DetailItem('📖', _clip(description, maxLen: 160)));
+      details.add(_DetailItem('📖', _cleanMarkdownSymbols(_clip(description, maxLen: 160))));
     }
     if (datasetWarnings != null && datasetWarnings.isNotEmpty) {
-      details.add(_DetailItem('⚠️', datasetWarnings));
+      details.add(_DetailItem('⚠️', _cleanMarkdownSymbols(datasetWarnings)));
     }
     if (datasetOrigin != null && datasetOrigin.isNotEmpty) {
       details.add(_DetailItem('🌿', 'Asal: $datasetOrigin'));
@@ -576,7 +576,7 @@ class _ResultScreenState extends State<ResultScreen> {
         children: flags.map((flag) {
           final ingredient = _asString(flag['ingredient']) ?? '-';
           final message =
-              _asString(flag['message']) ?? 'Detail warning tidak tersedia.';
+              _cleanMarkdownSymbols(_asString(flag['message']) ?? 'Detail warning tidak tersedia.');
 
           return Container(
             margin: const EdgeInsets.only(bottom: 9),
@@ -729,7 +729,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         color: AppColors.primaryGreenDark.withValues(alpha: 0.15)),
                   ),
                   child: Text(
-                    aiText,
+                    _cleanMarkdownSymbols(aiText),
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textDark,
@@ -745,6 +745,22 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  String _cleanMarkdownSymbols(String text) {
+    if (text.isEmpty) return text;
+    return text
+        // Remove markdown headers ### or ## or # at start of line
+        .replaceAll(RegExp(r'^[#]+\s*'), '')
+        // Remove bold/italic asterisks (** or *)
+        .replaceAll(RegExp(r'\*\*|\*'), '')
+        // Remove bold/italic underscores (__ or _)
+        .replaceAll(RegExp(r'__|_(?=[a-zA-Z0-9])|(?<=[a-zA-Z0-9])_'), '')
+        // Remove code backticks (` or ```)
+        .replaceAll(RegExp(r'```|`'), '')
+        // Remove markdown links [text](url) -> keep just text
+        .replaceAllMapped(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), (m) => m[1] ?? '')
+        .trim();
+  }
+
   List<_MarkdownSection> _parseMarkdownSections(String text) {
     if (text.trim().isEmpty) return [];
     final normalized = text
@@ -752,23 +768,53 @@ class _ResultScreenState extends State<ResultScreen> {
         .replaceAll('\r', '\n')
         .trim();
 
-    // Match numbered section headers: "1) Title" or "1. Title"
-    final sectionRegex = RegExp(r'(^|\n)(\d+[).]\s+[^\n]+)');
-    final matches = sectionRegex.allMatches(normalized).toList();
+    final lines = normalized.split('\n');
+    final sections = <_MarkdownSection>[];
+    String? currentHeading;
+    final currentBodyLines = <String>[];
 
-    if (matches.isEmpty) {
-      return [_MarkdownSection(heading: null, body: normalized)];
+    for (var line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+
+      // Detect if this line is a heading:
+      // 1) Starts with numbered format like "1) ", "1. ", "2) ", etc.
+      // 2) Starts with markdown heading "# ", "## ", "### "
+      // 3) Starts with emoji or bold asterisks and contains heading keywords like Karakter, Kecocokan, Harmoni, Catatan, Kesimpulan, Peringatan, Insight
+      // 4) Or is wrapped in bold asterisks (**...**) on a short line (< 65 chars) without ending in a period.
+      final isNumbered = RegExp(r'^\d+[).]\s+').hasMatch(trimmed);
+      final isHashHeading = trimmed.startsWith('#');
+      final isKeywordHeading = RegExp(r'^(🌸|🎯|🤝|💖|✨|💡|📌|🔥|\*\*🌸|\*\*🎯|\*\*🤝|\*\*💖|\*\*✨|\*\*💡|\*\*📌|\*\*🔥|Karakter|Kecocokan|Harmoni|Catatan|Kesimpulan|Peringatan|Insight)', caseSensitive: false).hasMatch(trimmed);
+      final isBoldLine = trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length < 65 && !trimmed.endsWith('.');
+
+      if (isNumbered || isHashHeading || isKeywordHeading || isBoldLine) {
+        // Save previous section if it has content
+        if (currentHeading != null || currentBodyLines.isNotEmpty) {
+          sections.add(_MarkdownSection(
+            heading: currentHeading,
+            body: currentBodyLines.join('\n').trim(),
+          ));
+          currentBodyLines.clear();
+        }
+        // Clean heading text from markdown symbols and numbers
+        var cleanHeading = _cleanMarkdownSymbols(trimmed);
+        cleanHeading = cleanHeading.replaceFirst(RegExp(r'^\d+[).]\s*'), '').trim();
+        currentHeading = cleanHeading;
+      } else {
+        currentBodyLines.add(line);
+      }
     }
 
-    final sections = <_MarkdownSection>[];
-    for (int i = 0; i < matches.length; i++) {
-      final headingRaw = matches[i].group(2)!.trim();
-      final heading = headingRaw.replaceFirst(RegExp(r'^\d+[).]\s*'), '');
-      final bodyStart = matches[i].end;
-      final bodyEnd =
-          i + 1 < matches.length ? matches[i + 1].start : normalized.length;
-      final body = normalized.substring(bodyStart, bodyEnd).trim();
-      sections.add(_MarkdownSection(heading: heading, body: body));
+    // Add final section
+    if (currentHeading != null || currentBodyLines.isNotEmpty) {
+      sections.add(_MarkdownSection(
+        heading: currentHeading,
+        body: currentBodyLines.join('\n').trim(),
+      ));
+    }
+
+    if (sections.isEmpty) {
+      return [_MarkdownSection(heading: null, body: _cleanMarkdownSymbols(normalized))];
     }
     return sections;
   }
@@ -808,7 +854,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 line.startsWith('•');
             final displayText =
                 isBullet ? line.replaceFirst(RegExp(r'^[-*•]\s*'), '') : line;
-            final clean = displayText.replaceAll(RegExp(r'\*\*'), '');
+            final clean = _cleanMarkdownSymbols(displayText);
 
             if (isBullet) {
               return Padding(
