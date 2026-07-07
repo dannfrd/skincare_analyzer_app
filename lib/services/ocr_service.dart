@@ -21,11 +21,11 @@ class OcrService {
   // KONFIGURASI ENGINE PENELITIAN (TA):
   // Ubah konstanta ini untuk mengganti engine utama aplikasi:
   // - 'hybrid'    : Menggunakan MLKit dengan fallback Tesseract (Default)
-  // - 'mlkit'     : Menggunakan Google MLKit murni
+  // - 'mlkit'     : Menggunakan Google MLKit murni (Aktif untuk Pengujian TA)
   // - 'tesseract' : Menggunakan Tesseract murni
   // - 'paddleocr' : Menggunakan PaddleOCR secara lokal di perangkat
   // ==================================================
-  static const String activeEngine = 'paddleocr';
+  static const String activeEngine = 'mlkit';
 
   static Future<String> extractText(File imageFile) async {
     if (!await imageFile.exists()) {
