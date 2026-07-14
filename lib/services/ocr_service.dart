@@ -40,22 +40,36 @@ class OcrService {
       String tessDataRoot = '';
       File? processedFile;
 
+      int mlKitTimeMs = 0;
+      int tessTimeMs = 0;
+      int hybridTimeMs = 0;
+      int paddleTimeMs = 0;
+
+      final totalWatch = Stopwatch()..start();
+
       // 1. Ekstrak dengan PaddleOCR Local (Bila engine aktif adalah paddleocr)
       if (activeEngine == 'paddleocr') {
+        final watch = Stopwatch()..start();
         try {
           paddleText = await _extractWithPaddleOcr(imageFile);
         } catch (e) {
           paddleText = 'Error running PaddleOCR: $e';
         }
+        watch.stop();
+        paddleTimeMs = watch.elapsedMilliseconds;
       }
 
       // 2. Ekstrak dengan MLKit Murni jika engine aktif membutuhkannya
       if (activeEngine == 'mlkit' || activeEngine == 'hybrid') {
+        final watch = Stopwatch()..start();
         mlKitText = await _extractWithMlKit(imageFile);
+        watch.stop();
+        mlKitTimeMs = watch.elapsedMilliseconds;
       }
 
       // 2. Ekstrak dengan Tesseract Murni jika engine aktif membutuhkannya
       if (activeEngine == 'tesseract' || activeEngine == 'hybrid') {
+        final watch = Stopwatch()..start();
         try {
           tessDataRoot = await _prepareTessData();
           processedFile = await _prepareImageForOcr(imageFile);
@@ -78,10 +92,13 @@ class OcrService {
         } catch (e) {
           tessText = 'Error running Tesseract: $e';
         }
+        watch.stop();
+        tessTimeMs = watch.elapsedMilliseconds;
       }
 
       // 3. Proses Hybrid (Logika Cerdas Fallback) hanya jika engine hybrid aktif
       if (activeEngine == 'hybrid') {
+        final watch = Stopwatch()..start();
         hybridText = mlKitText;
         if (_looksWeak(mlKitText)) {
           final candidates = <String>[mlKitText];
@@ -113,7 +130,10 @@ class OcrService {
 
           hybridText = _pickBest(candidates);
         }
+        watch.stop();
+        hybridTimeMs = mlKitTimeMs + tessTimeMs + watch.elapsedMilliseconds;
       }
+      totalWatch.stop();
 
       // Cetak semua hasil ke Konsol Debug Flutter untuk kebutuhan PENELITIAN
       // ignore: avoid_print
@@ -129,7 +149,7 @@ class OcrService {
       
       if (activeEngine == 'paddleocr') {
         // ignore: avoid_print
-        print(">>> PADDLE OCR MURNI LOKAL:");
+        print(">>> PADDLE OCR MURNI LOKAL (Waktu: $paddleTimeMs ms):");
         // ignore: avoid_print
         print(paddleText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : paddleText.trim());
         // ignore: avoid_print
@@ -138,7 +158,7 @@ class OcrService {
 
       if (activeEngine == 'mlkit' || activeEngine == 'hybrid') {
         // ignore: avoid_print
-        print(">>> MLKIT MURNI:");
+        print(">>> MLKIT MURNI (Waktu Eksekusi: $mlKitTimeMs ms):");
         // ignore: avoid_print
         print(mlKitText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : mlKitText.trim());
         // ignore: avoid_print
@@ -147,7 +167,7 @@ class OcrService {
       
       if (activeEngine == 'tesseract' || activeEngine == 'hybrid') {
         // ignore: avoid_print
-        print(">>> TESSERACT MURNI (PSM 6):");
+        print(">>> TESSERACT MURNI (Waktu Eksekusi: $tessTimeMs ms):");
         // ignore: avoid_print
         print(tessText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : tessText.trim());
         // ignore: avoid_print
@@ -156,7 +176,7 @@ class OcrService {
       
       if (activeEngine == 'hybrid') {
         // ignore: avoid_print
-        print(">>> HYBRID (MLKIT + TESSERACT):");
+        print(">>> HYBRID MLKIT + TESSERACT (Waktu Eksekusi: $hybridTimeMs ms):");
         // ignore: avoid_print
         print(hybridText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : hybridText.trim());
         // ignore: avoid_print
