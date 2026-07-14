@@ -4,6 +4,7 @@ import 'package:skincare_analyzer_app/models/scan_payload.dart';
 import 'package:skincare_analyzer_app/screens/result_screen.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:skincare_analyzer_app/services/ocr_service.dart';
+import 'package:skincare_analyzer_app/utils/smooth_page_transitions.dart';
 
 class ScanProgressScreen extends StatefulWidget {
   final ScanPayload payload;
@@ -69,7 +70,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
+        SmoothPageRoute(
           builder: (context) =>
               ResultScreen(analysisData: result, imageFile: widget.payload.imageFile),
         ),

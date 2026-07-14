@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/skincare_tip.dart';
 
@@ -34,89 +35,109 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
   Widget build(BuildContext context) {
     final filteredList = _filteredTips;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Skincare Tips',
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.cardLight,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        appBar: AppBar(
+          title: const Text(
+            'Skincare Tips & Guides',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+              fontSize: 19,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    width: 1,
                   ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search articles or topics...',
-                  hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: AppColors.textGray),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: AppColors.textGray),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchQuery = "";
-                            });
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search articles or topics...',
+                    hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textGray),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, color: AppColors.textGray),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = "";
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Categories Filter Row
-          _buildCategorySelector(),
-          
-          const SizedBox(height: 16),
+            // Categories Filter Row
+            _buildCategorySelector(),
+            
+            const SizedBox(height: 16),
 
-          // Article List
-          Expanded(
-            child: filteredList.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredList.length,
-                    itemBuilder: (context, index) {
-                      final tip = filteredList[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: _buildTipCard(tip),
-                      );
-                    },
-                  ),
-          ),
-        ],
+            // Article List
+            Expanded(
+              child: filteredList.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                      itemCount: filteredList.length,
+                      itemBuilder: (context, index) {
+                        final tip = filteredList[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14.0),
+                          child: _buildTipCard(tip),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -124,11 +145,12 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
   Widget _buildCategorySelector() {
     final categories = ['All', 'Cleansing', 'Hydration', 'Protection', 'Actives', 'Barrier Care'];
     return SizedBox(
-      height: 38,
+      height: 40,
       child: ListView.builder(
+        physics: const BouncingScrollPhysics(),
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         itemBuilder: (context, index) {
           final cat = categories[index];
           final isSelected = _selectedCategory == cat;
@@ -139,7 +161,7 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
                 cat,
                 style: TextStyle(
                   color: isSelected ? Colors.white : AppColors.textDark,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   fontSize: 13,
                 ),
               ),
@@ -151,15 +173,16 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
                   });
                 }
               },
-              selectedColor: AppColors.primaryGreen,
-              backgroundColor: AppColors.cardLight,
+              selectedColor: AppColors.primaryGreenDark,
+              backgroundColor: Colors.white,
               checkmarkColor: Colors.white,
+              showCheckmark: false,
               elevation: 0,
               pressElevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isSelected ? Colors.transparent : Colors.grey.shade200,
+                  color: isSelected ? Colors.transparent : Colors.black.withValues(alpha: 0.08),
                   width: 1,
                 ),
               ),
@@ -173,12 +196,16 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
   Widget _buildTipCard(SkincareTip tip) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardLight,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.04),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -189,42 +216,42 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
           onTap: () {
             Navigator.pushNamed(context, '/tip-detail', arguments: tip);
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(14.0),
             child: Row(
               children: [
                 // Cover Image
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   child: Image.network(
                     tip.imageUrl,
-                    width: 90,
-                    height: 90,
+                    width: 96,
+                    height: 96,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Container(
-                        width: 90,
-                        height: 90,
+                        width: 96,
+                        height: 96,
                         color: AppColors.surfaceGreen,
                         child: const Center(
                           child: SizedBox(
-                            width: 20,
-                            height: 20,
+                            width: 22,
+                            height: 22,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreenDark),
                             ),
                           ),
                         ),
                       );
                     },
                     errorBuilder: (context, error, stackTrace) => Container(
-                      width: 90,
-                      height: 90,
+                      width: 96,
+                      height: 96,
                       color: AppColors.surfaceGreen,
-                      child: const Icon(Icons.spa_outlined, color: AppColors.primaryGreen, size: 30),
+                      child: const Icon(Icons.spa_rounded, color: AppColors.primaryGreenDark, size: 32),
                     ),
                   ),
                 ),
@@ -240,15 +267,15 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: AppColors.surfaceGreen,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               tip.category,
                               style: const TextStyle(
-                                fontSize: 10,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryGreenDark,
                               ),
@@ -256,24 +283,24 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
                           ),
                           Row(
                             children: [
-                              const Icon(Icons.access_time, size: 12, color: AppColors.textGray),
+                              Icon(Icons.access_time_rounded, size: 13, color: AppColors.textGray.withValues(alpha: 0.8)),
                               const SizedBox(width: 4),
                               Text(
                                 tip.readTime,
-                                style: const TextStyle(fontSize: 10, color: AppColors.textGray),
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textGray.withValues(alpha: 0.8)),
                               ),
                             ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       // Title
                       Text(
                         tip.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                           height: 1.3,
                           color: AppColors.textDark,
@@ -286,7 +313,7 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.5,
                           color: AppColors.textGray,
                         ),
                       ),
@@ -315,7 +342,7 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.search_off_outlined,
+                Icons.search_off_rounded,
                 size: 60,
                 color: AppColors.primaryGreenDark,
               ),

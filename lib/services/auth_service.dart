@@ -44,6 +44,29 @@ class AuthService {
     return FirebaseAuth.instance.signInWithCredential(credential);
   }
 
+  static Map<String, dynamic> _decodeResponse(http.Response response) {
+    if (response.body.trim().startsWith('<') ||
+        response.headers['content-type']?.contains('text/html') == true) {
+      if (response.statusCode == 502 || response.statusCode == 503) {
+        throw Exception(
+          'Server backend sedang gangguan atau tidak aktif (${response.statusCode} Bad Gateway). Pastikan service backend di VPS berjalan.',
+        );
+      }
+      throw Exception(
+        'Terjadi kesalahan pada server (${response.statusCode}). Response dari server bukan format JSON.',
+      );
+    }
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return {'data': decoded};
+    } catch (e) {
+      throw Exception('Format respons server tidak valid: $e');
+    }
+  }
+
   /// Melakukan proses login
   static Future<Map<String, dynamic>> login(
     String email,
@@ -56,7 +79,7 @@ class AuthService {
         body: jsonEncode({'email': email, 'password': password}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _decodeResponse(response);
 
       if (response.statusCode == 200) {
         // Berhasil login (misalnya menerima token dan/atau data user)
@@ -102,7 +125,7 @@ class AuthService {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _decodeResponse(response);
 
       // Status 200 (OK) atau 201 (Created)
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -167,7 +190,7 @@ class AuthService {
         body: jsonEncode({'id_token': firebaseToken}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _decodeResponse(response);
 
       // 5. Tangkap token JWT dari backend dan data User.
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -194,7 +217,9 @@ class AuthService {
         );
       }
 
-      throw Exception('Gagal autentikasi Google: ${e.description ?? e.code.name}');
+      throw Exception(
+        'Gagal autentikasi Google: ${e.description ?? e.code.name}',
+      );
     } on FirebaseAuthException catch (e) {
       final message = (e.message ?? '').toLowerCase();
       if (e.code == 'web-context-cancelled' ||
@@ -251,7 +276,7 @@ class AuthService {
         body: jsonEncode({'email': email}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _decodeResponse(response);
 
       if (response.statusCode == 200) {
         return data;
@@ -261,10 +286,14 @@ class AuthService {
         );
       }
     } on SocketException {
-      throw Exception('Tidak dapat terhubung ke server. Pastikan backend aktif.');
+      throw Exception(
+        'Tidak dapat terhubung ke server. Pastikan backend aktif.',
+      );
     } catch (e) {
       if (e is http.ClientException) {
-        throw Exception('Koneksi terputus. Pastikan internet aktif dan backend berjalan.');
+        throw Exception(
+          'Koneksi terputus. Pastikan internet aktif dan backend berjalan.',
+        );
       }
       if (e.toString().contains('Exception:')) {
         throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -274,7 +303,10 @@ class AuthService {
   }
 
   /// Mereset password pengguna
-  static Future<Map<String, dynamic>> resetPassword(String email, String newPassword) async {
+  static Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String newPassword,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/auth/reset-password'),
@@ -282,7 +314,7 @@ class AuthService {
         body: jsonEncode({'email': email, 'new_password': newPassword}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _decodeResponse(response);
 
       if (response.statusCode == 200) {
         return data;
@@ -292,10 +324,14 @@ class AuthService {
         );
       }
     } on SocketException {
-      throw Exception('Tidak dapat terhubung ke server. Pastikan backend aktif.');
+      throw Exception(
+        'Tidak dapat terhubung ke server. Pastikan backend aktif.',
+      );
     } catch (e) {
       if (e is http.ClientException) {
-        throw Exception('Koneksi terputus. Pastikan internet aktif dan backend berjalan.');
+        throw Exception(
+          'Koneksi terputus. Pastikan internet aktif dan backend berjalan.',
+        );
       }
       if (e.toString().contains('Exception:')) {
         throw Exception(e.toString().replaceAll('Exception: ', ''));
