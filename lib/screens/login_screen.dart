@@ -356,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primaryGreen.withOpacity(0.15),
+                          color: AppColors.primaryGreen.withValues(alpha: 0.15),
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -397,7 +397,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 15,
                           offset: const Offset(0, 4),
                         ),
@@ -614,7 +614,7 @@ class _LoginScreenState extends State<LoginScreen> {
       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: AppColors.surfaceGreen.withOpacity(0.4),
+      fillColor: AppColors.surfaceGreen.withValues(alpha: 0.4),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

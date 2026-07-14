@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,13 +24,77 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isLoadingRecs = true;
   List<Map<String, dynamic>> _recommendations = [];
 
+  File? _activeImageFile;
+  String? _networkImageUrl;
+
   Map<String, dynamic> get analysisData => widget.analysisData;
   File? get imageFile => widget.imageFile;
 
   @override
   void initState() {
     super.initState();
+    _activeImageFile = widget.imageFile;
+    _resolveAndPersistImage();
     _loadRecommendations();
+  }
+
+  Future<void> _resolveAndPersistImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final analysisId = _toInt(analysisData['analysis_id']) ?? _toInt(analysisData['id']);
+
+    File? resolvedFile = _activeImageFile;
+
+    // 1. Jika ada file lokal dari scan baru, simpan ke storage permanen dan catat di SharedPreferences
+    if (resolvedFile != null && resolvedFile.existsSync()) {
+      if (analysisId != null && analysisId > 0) {
+        try {
+          final docDir = await getApplicationDocumentsDirectory();
+          final imgDir = Directory('${docDir.path}/scan_images');
+          if (!await imgDir.exists()) await imgDir.create(recursive: true);
+
+          final targetPath = '${imgDir.path}/scan_$analysisId.jpg';
+          if (resolvedFile.path != targetPath) {
+            await resolvedFile.copy(targetPath);
+            resolvedFile = File(targetPath);
+          }
+          await prefs.setString('scan_img_$analysisId', targetPath);
+        } catch (_) {}
+      }
+    } else {
+      // 2. Jika imageFile null (misal saat dibuka dari HistoryScreen), cari di SharedPreferences atau dokumen lokal
+      if (analysisId != null && analysisId > 0) {
+        final savedPath = prefs.getString('scan_img_$analysisId');
+        if (savedPath != null && File(savedPath).existsSync()) {
+          resolvedFile = File(savedPath);
+        } else {
+          try {
+            final docDir = await getApplicationDocumentsDirectory();
+            final defaultFile = File('${docDir.path}/scan_images/scan_$analysisId.jpg');
+            if (defaultFile.existsSync()) {
+              resolvedFile = defaultFile;
+            }
+          } catch (_) {}
+        }
+      }
+
+      // 3. Cari dari data JSON (local_image_path atau image_path)
+      if (resolvedFile == null) {
+        final pathStr = _asString(analysisData['local_image_path']) ?? _asString(analysisData['image_path']);
+        if (pathStr != null && File(pathStr).existsSync()) {
+          resolvedFile = File(pathStr);
+        }
+      }
+    }
+
+    // 4. Periksa image URL network
+    final urlStr = _asString(analysisData['image_url']) ?? _asString(analysisData['imageUrl']);
+
+    if (mounted) {
+      setState(() {
+        _activeImageFile = resolvedFile;
+        _networkImageUrl = urlStr;
+      });
+    }
   }
 
   Future<void> _loadRecommendations() async {
@@ -161,10 +227,16 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildImageHeader() {
+    final hasLocalImage = _activeImageFile != null && _activeImageFile!.existsSync();
+    final hasNetworkImage = !hasLocalImage && _networkImageUrl != null && _networkImageUrl!.startsWith('http');
+    final hasAnyImage = hasLocalImage || hasNetworkImage;
+
     return GestureDetector(
       onTap: () {
-        if (imageFile != null) {
-          _showFullImageDialog(context, imageFile!);
+        if (hasLocalImage) {
+          _showFullImageDialog(context, file: _activeImageFile!);
+        } else if (hasNetworkImage) {
+          _showFullImageDialog(context, url: _networkImageUrl!);
         }
       },
       child: ClipRRect(
@@ -174,16 +246,18 @@ class _ResultScreenState extends State<ResultScreen> {
             SizedBox(
               width: double.infinity,
               height: 185,
-              child: imageFile != null
-                  ? Image.file(imageFile!, fit: BoxFit.cover)
-                  : Container(
-                      color: const Color(0xFFE7EFE9),
-                      child: const Icon(
-                        Icons.spa,
-                        size: 62,
-                        color: AppColors.primaryGreenDark,
-                      ),
-                    ),
+              child: hasLocalImage
+                  ? Image.file(_activeImageFile!, fit: BoxFit.cover)
+                  : (hasNetworkImage
+                      ? Image.network(_networkImageUrl!, fit: BoxFit.cover)
+                      : Container(
+                          color: const Color(0xFFE7EFE9),
+                          child: const Icon(
+                            Icons.spa,
+                            size: 62,
+                            color: AppColors.primaryGreenDark,
+                          ),
+                        )),
             ),
             Positioned.fill(
               child: Container(
@@ -197,7 +271,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
               ),
             ),
-            if (imageFile != null)
+            if (hasAnyImage)
               Positioned(
                 top: 10,
                 right: 10,
@@ -263,7 +337,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  void _showFullImageDialog(BuildContext context, File file) {
+  void _showFullImageDialog(BuildContext context, {File? file, String? url}) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -280,10 +354,17 @@ class _ResultScreenState extends State<ResultScreen> {
                 panEnabled: true,
                 minScale: 0.5,
                 maxScale: 5.0,
-                child: Image.file(
-                  file,
-                  fit: BoxFit.contain,
-                ),
+                child: file != null && file.existsSync()
+                    ? Image.file(
+                        file,
+                        fit: BoxFit.contain,
+                      )
+                    : (url != null && url.startsWith('http')
+                        ? Image.network(
+                            url,
+                            fit: BoxFit.contain,
+                          )
+                        : const SizedBox()),
               ),
             ),
             // Top Bar with Close Button
@@ -1695,6 +1776,19 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     setState(() => _isSaving = true);
+    if (_activeImageFile != null && _activeImageFile!.existsSync() && analysisId > 0) {
+      try {
+        final docDir = await getApplicationDocumentsDirectory();
+        final imgDir = Directory('${docDir.path}/scan_images');
+        if (!await imgDir.exists()) await imgDir.create(recursive: true);
+        final targetPath = '${imgDir.path}/scan_$analysisId.jpg';
+        if (_activeImageFile!.path != targetPath) {
+          await _activeImageFile!.copy(targetPath);
+        }
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('scan_img_$analysisId', targetPath);
+      } catch (_) {}
+    }
     final saved = await ApiService.saveAnalysisHistory(analysisId);
     if (!mounted) return;
 
