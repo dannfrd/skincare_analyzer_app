@@ -80,6 +80,7 @@ flutter:
     - assets/images/logo2_splash.png
     - assets/images/logo3_home.png
     - assets/images/scanproduct.png
+    - assets/images/dermify_scan_banner.png
     - assets/tessdata_config.json
     - assets/tessdata/eng.traineddata
 

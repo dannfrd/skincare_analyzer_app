@@ -833,7 +833,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.auto_awesome_rounded,
+                              Icon(Icons.text_snippet_outlined,
                                   size: 12, color: color),
                               const SizedBox(width: 5),
                               Text(
@@ -1089,7 +1089,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Text(
                 _searchQuery.isNotEmpty
                     ? 'Try searching with a different product brand or category keyword ("$_searchQuery").'
-                    : 'Scan your first skincare product to analyze safety checks, ingredients, and AI recommendations.',
+                    : 'Scan your first skincare product to check ingredients, safety ratings, and detailed analysis.',
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textGray,
