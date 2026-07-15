@@ -81,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                                 ],
                               ),
                               Text(
-                                'AI Skin Companion',
+                                'Skincare Analyzer',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -221,12 +221,12 @@ class HomeScreen extends StatelessWidget {
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.auto_awesome_rounded,
+                                      Icon(Icons.spa_rounded,
                                           size: 13,
                                           color: AppColors.primaryGreenDark),
                                       SizedBox(width: 5),
                                       Text(
-                                        'AI-POWERED DERMATOLOGY',
+                                        'SKINCARE ANALYSIS',
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -241,7 +241,7 @@ class HomeScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             const Text(
-                              'Welcome to SkinCare AI\nAnalyzer',
+                              'Welcome to Dermify',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
@@ -301,7 +301,7 @@ class HomeScreen extends StatelessWidget {
                           child: Stack(
                             children: [
                               Image.asset(
-                                'assets/images/scanproduct.png',
+                                'assets/images/dermify_scan_banner.png',
                                 height: 180,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
@@ -369,7 +369,7 @@ class HomeScreen extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Text(
-                                      'AI Scan',
+                                      'Instant',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,

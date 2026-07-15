@@ -300,7 +300,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '💡 Tips: Take photos near the "Ingredients / Composition" section, avoid light reflections.',
+                  'Tips: Take photos near the "Ingredients / Composition" section, avoid light reflections.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: Colors.grey.shade500,
