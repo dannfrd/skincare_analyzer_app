@@ -4,6 +4,7 @@ import 'package:skincare_analyzer_app/models/scan_payload.dart';
 import 'package:skincare_analyzer_app/screens/result_screen.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:skincare_analyzer_app/services/ocr_service.dart';
+import 'package:skincare_analyzer_app/utils/smooth_page_transitions.dart';
 
 class ScanProgressScreen extends StatefulWidget {
   final ScanPayload payload;
@@ -69,7 +70,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
+        SmoothPageRoute(
           builder: (context) =>
               ResultScreen(analysisData: result, imageFile: widget.payload.imageFile),
         ),
@@ -165,7 +166,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                           ? 'Image Processing'
                           : _currentStep == 1
                           ? 'OCR Text Extraction'
-                          : 'AI Ingredient Analysis',
+                          : 'Ingredient Analysis',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -236,7 +237,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                     _buildStepLineContainer(isActive: _currentStep >= 2),
                     _buildStepRow(
                       icon: Icons.more_horiz,
-                      title: 'AI Ingredient Analysis',
+                      title: 'Ingredient Analysis',
                       subtitle: _currentStep == 2 ? 'In Progress' : 'Upcoming',
                       isActive: _currentStep >= 2,
                       isDone: false,
@@ -255,14 +256,14 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.psychology,
+                      Icons.manage_search_rounded,
                       color: AppColors.primaryGreen,
                       size: 32,
                     ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Analyzing ingredients using\nAI...',
+                    'Checking your ingredients...',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 22,
@@ -274,7 +275,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24.0),
                     child: Text(
-                      'Our neural network is identifying potential allergens and nutritional components.',
+                      'We are checking each ingredient against our safety database for any potential concerns.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppColors.textGray,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -90,7 +91,9 @@ class ApiService {
       var streamedResponse = await request.send().timeout(
         const Duration(seconds: 180),
       );
-      var response = await http.Response.fromStream(streamedResponse);
+      var response = await http.Response.fromStream(streamedResponse).timeout(
+        const Duration(seconds: 180),
+      );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -99,6 +102,10 @@ class ApiService {
           'Failed to analyze image: ${response.statusCode} - ${response.body}',
         );
       }
+    } on TimeoutException catch (e) {
+      throw Exception(
+        'Waktu koneksi habis (timeout) saat menganalisis gambar. Server membutuhkan waktu terlalu lama atau koneksi internet lambat. Detail: $e',
+      );
     } on SocketException catch (e) {
       throw Exception(
         'Cannot reach backend at $baseUrl. Make sure backend is running and, for real devices, use your LAN IP via --dart-define=API_BASE_URL=http://192.168.x.x:8000. Detail: $e',
@@ -161,7 +168,7 @@ class ApiService {
             headers: UserSession.authHeaders,
             body: jsonEncode(payload),
           )
-          .timeout(const Duration(seconds: 90));
+          .timeout(const Duration(seconds: 180));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -169,6 +176,10 @@ class ApiService {
 
       throw Exception(
         'Failed to analyze extracted text: ${response.statusCode} - ${response.body}',
+      );
+    } on TimeoutException catch (e) {
+      throw Exception(
+        'Waktu koneksi habis (timeout) saat menganalisis bahan. Server membutuhkan waktu terlalu lama atau koneksi internet lambat. Detail: $e',
       );
     } on SocketException catch (e) {
       throw Exception(

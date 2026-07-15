@@ -1,8 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/screens/result_screen.dart';
 import 'package:skincare_analyzer_app/services/api_service.dart';
 import 'package:skincare_analyzer_app/services/user_session.dart';
+import 'package:skincare_analyzer_app/utils/smooth_page_transitions.dart';
 
 // ─── Data Model ─────────────────────────────────────────────────────────────
 
@@ -13,6 +19,10 @@ class ScanHistoryItem {
   final String date;
   final String summary;
   final String recommendation;
+  final String? localImagePath;
+  final String? imageUrl;
+  final int warningsCount;
+  final int unknownCount;
 
   const ScanHistoryItem({
     required this.analysisId,
@@ -21,6 +31,10 @@ class ScanHistoryItem {
     required this.date,
     required this.summary,
     required this.recommendation,
+    this.localImagePath,
+    this.imageUrl,
+    this.warningsCount = 0,
+    this.unknownCount = 0,
   });
 }
 
@@ -50,13 +64,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _fetchHistory() async {
     try {
       final List<dynamic> historyData = await ApiService.getHistory();
+      final prefs = await SharedPreferences.getInstance();
+      final docDir = await getApplicationDocumentsDirectory();
 
-      final List<ScanHistoryItem> parsedItems = historyData.map((e) {
+      final List<ScanHistoryItem> parsedItems = [];
+      for (var e in historyData) {
+        if (e is! Map) continue;
         final product = e['product'] is Map ? e['product'] as Map : {};
         final analysis =
             e['analyses'] is List && (e['analyses'] as List).isNotEmpty
                 ? e['analyses'][0]
                 : e;
+
+        final analysisId = _toInt(e['analysis_id']) ?? _toInt(analysis['id']) ?? _toInt(e['id']);
+
+        // Periksa gambar dari SharedPreferences / direktori dokumen lokal
+        String? imgPath;
+        if (analysisId != null && analysisId > 0) {
+          final savedPath = prefs.getString('scan_img_$analysisId');
+          if (savedPath != null && await File(savedPath).exists()) {
+            imgPath = savedPath;
+          } else {
+            final defaultPath = '${docDir.path}/scan_images/scan_$analysisId.jpg';
+            if (await File(defaultPath).exists()) {
+              imgPath = defaultPath;
+            }
+          }
+        }
+        if (imgPath == null) {
+          final pStr = _str(e['image_path']) ?? _str(analysis['image_path']);
+          if (pStr != null && await File(pStr).exists()) {
+            imgPath = pStr;
+          }
+        }
+
+        final imgUrl = _str(e['image_url']) ?? _str(analysis['image_url']) ?? _str(product['image_url']);
 
         // Brand: prioritize product_brand → product['brand'] → product['name'] → fallback
         final brand = _str(product['brand']) ??
@@ -70,19 +112,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
             _str(e['product_category']) ??
             '';
 
-        return ScanHistoryItem(
-          analysisId: _toInt(e['analysis_id']) ?? _toInt(analysis['id']),
+        final summaryText = _str(analysis['summary']) ??
+            _str(e['summary']) ??
+            'Summary analysis not available.';
+        final recText = _str(analysis['recommendation']) ??
+            _str(e['recommendation']) ??
+            'No additional recommendations.';
+
+        final warnings = _toInt(analysis['warnings_count']) ?? _toInt(e['warnings_count']) ?? 0;
+        final unknown = _toInt(analysis['unknown_count']) ?? _toInt(e['unknown_count']) ?? 0;
+
+        parsedItems.add(ScanHistoryItem(
+          analysisId: analysisId,
           productBrand: brand,
           productCategory: category,
           date: e['created_at'] != null
               ? _formatDate(e['created_at'].toString())
               : 'Tanggal tidak diketahui',
-          summary: _str(analysis['summary']) ??
-              'Summary analysis not available.',
-          recommendation: _str(analysis['recommendation']) ??
-              'No additional recommendations.',
-        );
-      }).toList();
+          summary: summaryText,
+          recommendation: recText,
+          localImagePath: imgPath,
+          imageUrl: imgUrl,
+          warningsCount: warnings,
+          unknownCount: unknown,
+        ));
+      }
 
       if (mounted) {
         setState(() {
@@ -198,19 +252,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
     };
   }
 
-  void _openResultScreen(Map<String, dynamic> data) {
+  void _openResultScreen(Map<String, dynamic> data, {File? imageFile}) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ResultScreen(analysisData: data),
+      SmoothPageRoute(
+        builder: (context) => ResultScreen(analysisData: data, imageFile: imageFile),
       ),
     );
   }
 
   Future<void> _openHistoryDetail(ScanHistoryItem item) async {
     final analysisId = item.analysisId;
+    final file = item.localImagePath != null ? File(item.localImagePath!) : null;
+
     if (analysisId == null || analysisId <= 0) {
-      _openResultScreen(_buildFallbackAnalysisData(item));
+      _openResultScreen(_buildFallbackAnalysisData(item), imageFile: file);
       return;
     }
 
@@ -224,7 +280,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (!mounted) return;
 
       final mergedData = Map<String, dynamic>.from(detail);
-      mergedData.putIfAbsent('analysis_id', () => mergedData['id']);
+      mergedData.putIfAbsent('analysis_id', () => mergedData['id'] ?? analysisId);
+      if (item.localImagePath != null) {
+        mergedData['local_image_path'] = item.localImagePath;
+      }
+      if (item.imageUrl != null && mergedData['image_url'] == null) {
+        mergedData['image_url'] = item.imageUrl;
+      }
 
       // Skema lama: JSON utuh disimpan di ai_analysis
       if (mergedData['ai_analysis'] is Map &&
@@ -298,7 +360,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         };
       }
 
-      _openResultScreen(mergedData);
+      _openResultScreen(mergedData, imageFile: file);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -308,7 +370,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ),
       );
-      _openResultScreen(_buildFallbackAnalysisData(item));
+      _openResultScreen(_buildFallbackAnalysisData(item), imageFile: file);
     }
   }
 
@@ -337,48 +399,56 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-              child: Column(
-                children: [
-                  _buildAppBar(),
-                  const SizedBox(height: 20),
-                  _buildSearchBar(),
-                ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 12.0),
+                child: Column(
+                  children: [
+                    _buildAppBar(),
+                    const SizedBox(height: 16),
+                    _buildSearchBar(),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                          color: AppColors.primaryGreen))
-                  : _errorMessage != null
-                      ? Center(
-                          child: Text(_errorMessage!,
-                              style: const TextStyle(color: Colors.red)))
-                      : _filteredItems.isEmpty
-                          ? _buildEmptyState()
-                          : RefreshIndicator(
-                              color: AppColors.primaryGreen,
-                              onRefresh: _fetchHistory,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20.0),
-                                itemCount: _filteredItems.length,
-                                itemBuilder: (context, index) {
-                                  return _buildHistoryCard(
-                                      _filteredItems[index], index);
-                                },
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            color: AppColors.primaryGreen))
+                    : _errorMessage != null
+                        ? Center(
+                            child: Text(_errorMessage!,
+                                style: const TextStyle(color: Colors.red)))
+                        : _filteredItems.isEmpty
+                            ? _buildEmptyState()
+                            : RefreshIndicator(
+                                color: AppColors.primaryGreen,
+                                onRefresh: _fetchHistory,
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20.0, vertical: 4.0),
+                                  itemCount: _filteredItems.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildHistoryCard(
+                                        _filteredItems[index], index);
+                                  },
+                                ),
                               ),
-                            ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -386,23 +456,106 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildAppBar() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Image.asset('assets/images/logo3_home.png', width: 32, height: 32),
-        const SizedBox(width: 10),
-        const Text(
-          'Scan History',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/images/logo3_home.png',
+                width: 36,
+                height: 36,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Dermify',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primaryGreenDark,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  'Scan History',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textGray.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        const Spacer(),
-        if (!_isLoading)
-          Text(
-            '${_allItems.length} scan',
-            style: const TextStyle(fontSize: 13, color: AppColors.textGray),
+        if (!_isLoading) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.history_rounded,
+                  color: AppColors.primaryGreenDark,
+                  size: 16,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '${_allItems.length} Scans',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryGreenDark,
+                  ),
+                ),
+              ],
+            ),
           ),
+        ],
       ],
     );
   }
@@ -411,30 +564,57 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _searchQuery.isNotEmpty
+              ? AppColors.primaryGreen.withValues(alpha: 0.5)
+              : Colors.black.withValues(alpha: 0.04),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: TextField(
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value),
+        style: const TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textDark,
+        ),
         decoration: InputDecoration(
-          hintText: 'Search product brand or category...',
+          hintText: 'Search brand name or product category...',
           hintStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 15,
-              fontWeight: FontWeight.w400),
-          prefixIcon:
-              Icon(Icons.search, color: Colors.grey.shade400, size: 22),
+            color: Colors.grey.shade400,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: _searchQuery.isNotEmpty
+                ? AppColors.primaryGreenDark
+                : Colors.grey.shade400,
+            size: 20,
+          ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear,
-                      color: Colors.grey.shade400, size: 20),
+                  icon: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: Colors.grey.shade600,
+                      size: 14,
+                    ),
+                  ),
                   onPressed: () => setState(() {
                     _searchController.clear();
                     _searchQuery = '';
@@ -443,7 +623,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               : null,
           border: InputBorder.none,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
       ),
     );
@@ -454,17 +634,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 350 + (index * 80)),
+      duration: Duration(milliseconds: 300 + (index * 40)),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) => Transform.translate(
-        offset: Offset(0, 20 * (1 - value)),
+        offset: Offset(0, 12 * (1 - value)),
         child: Opacity(opacity: value, child: child),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.04),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -473,164 +657,471 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ],
         ),
-        child: Material(
-          color: Colors.transparent,
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => _openHistoryDetail(item),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  // ── Thumbnail (kategori-based) ───────────────────────
-                  _buildThumbnail(color, icon),
-                  const SizedBox(width: 14),
-                  // ── Info ────────────────────────────────────────────
-                  Expanded(
+          child: Stack(
+            children: [
+              // Left Accent Strip (Compact)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: color,
+                  ),
+                ),
+              ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _openHistoryDetail(item),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 11, 12, 11),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Brand name (judul utama)
-                        Text(
-                          item.productBrand,
-                          style: const TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                            height: 1.2,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 5),
-                        // Category badge
-                        if (item.productCategory.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: color.withValues(alpha: 0.25)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(icon, size: 10, color: color),
-                                const SizedBox(width: 4),
-                                Text(
-                                  item.productCategory,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: color,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Text(
-                            'No category selected',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade400,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        const SizedBox(height: 6),
-                        // Date
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Icon(Icons.calendar_today_outlined,
-                                size: 12, color: Colors.grey.shade400),
-                            const SizedBox(width: 4),
-                            Text(
-                              item.date,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: Colors.grey.shade400,
-                                fontWeight: FontWeight.w400,
+                            // ── Compact Thumbnail (54x54) ──
+                            _buildThumbnail(color, icon, item),
+                            const SizedBox(width: 12),
+                            // ── Brand, Date & Category Info ──
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.productBrand,
+                                          style: const TextStyle(
+                                            fontSize: 14.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textDark,
+                                            letterSpacing: -0.2,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.access_time_rounded,
+                                            size: 11,
+                                            color: Colors.grey.shade500,
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            item.date,
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              color: Colors.grey.shade600,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 5),
+                                  // Category & Warnings Badges (Compact)
+                                  Row(
+                                    children: [
+                                      if (item.productCategory.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 2.5),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                color.withValues(alpha: 0.12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                                color: color.withValues(
+                                                    alpha: 0.25),
+                                                width: 0.8),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(icon,
+                                                  size: 10, color: color),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                item.productCategory,
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  color: color,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      else
+                                        Text(
+                                          'No category',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade400,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      if (item.warningsCount > 0) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 7, vertical: 2.5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFEF3F2),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: const Color(0xFFFECDCA),
+                                              width: 0.8,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                  Icons.warning_amber_rounded,
+                                                  size: 10,
+                                                  color: Color(0xFFB42318)),
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                '${item.warningsCount} Warning',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Color(0xFFB42318),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 9),
+                        // ── Kotakan Kecil Hasil Analisis (Single Line Compact) ──
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: color.withValues(alpha: 0.16),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.text_snippet_outlined,
+                                  size: 12, color: color),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Hasil: ',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: color,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  _cleanMarkdownSymbols(item.summary),
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppColors.textDark,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Icon(Icons.chevron_right_rounded,
+                                  size: 15, color: Colors.grey.shade400),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.chevron_right,
-                      color: Colors.grey.shade300, size: 22),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildThumbnail(Color color, IconData icon) {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.85),
-            color.withValues(alpha: 0.55),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.25),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+  Widget _buildThumbnail(Color color, IconData icon, ScanHistoryItem item) {
+    final hasLocalImage =
+        item.localImagePath != null && File(item.localImagePath!).existsSync();
+    final hasNetworkImage = !hasLocalImage &&
+        item.imageUrl != null &&
+        item.imageUrl!.startsWith('http');
+    final hasAnyImage = hasLocalImage || hasNetworkImage;
+
+    return GestureDetector(
+      onTap: () {
+        if (hasLocalImage) {
+          _showFullImageDialog(context, file: File(item.localImagePath!));
+        } else if (hasNetworkImage) {
+          _showFullImageDialog(context, url: item.imageUrl!);
+        } else {
+          _openHistoryDetail(item);
+        }
+      },
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              color.withValues(alpha: 0.85),
+              color.withValues(alpha: 0.55),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.22),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (hasLocalImage)
+                Image.file(File(item.localImagePath!), fit: BoxFit.cover)
+              else if (hasNetworkImage)
+                Image.network(item.imageUrl!, fit: BoxFit.cover)
+              else
+                Center(
+                  child: Icon(icon,
+                      size: 24, color: Colors.white.withValues(alpha: 0.9)),
+                ),
+              if (hasAnyImage)
+                Positioned(
+                  right: 3,
+                  bottom: 3,
+                  child: Container(
+                    padding: const EdgeInsets.all(3.5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.zoom_in_rounded,
+                      color: Colors.white,
+                      size: 11,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
-      child: Icon(icon, size: 30, color: Colors.white.withValues(alpha: 0.9)),
+    );
+  }
+
+  String _cleanMarkdownSymbols(String text) {
+    if (text.isEmpty) return text;
+    return text
+        .replaceAll(RegExp(r'^[#]+\s*'), '')
+        .replaceAll(RegExp(r'\*\*|\*'), '')
+        .replaceAll(RegExp(r'__|_(?=[a-zA-Z0-9])|(?<=[a-zA-Z0-9])_'), '')
+        .replaceAll(RegExp(r'```|`'), '')
+        .replaceAllMapped(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), (m) => m[1] ?? '')
+        .trim();
+  }
+
+  void _showFullImageDialog(BuildContext context, {File? file, String? url}) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              child: InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.5,
+                maxScale: 5.0,
+                child: file != null && file.existsSync()
+                    ? Image.file(
+                        file,
+                        fit: BoxFit.contain,
+                      )
+                    : (url != null && url.startsWith('http')
+                        ? Image.network(
+                            url,
+                            fit: BoxFit.contain,
+                          )
+                        : const SizedBox()),
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 16,
+              right: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.pinch_rounded, color: Colors.white, size: 15),
+                        SizedBox(width: 6),
+                        Text(
+                          'Pinch to Zoom In / Out',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceGreen,
-              shape: BoxShape.circle,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceGreen,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.history_rounded,
+                  size: 46,
+                  color: AppColors.primaryGreenDark,
+                ),
+              ),
             ),
-            child: const Icon(Icons.history,
-                size: 40, color: AppColors.primaryGreenDark),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Belum ada scan',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isNotEmpty
-                ? 'No results for "$_searchQuery"'
-                : 'Scan your first skincare product!',
-            style:
-                const TextStyle(fontSize: 14, color: AppColors.textGray),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 24),
+            Text(
+              _searchQuery.isNotEmpty
+                  ? 'No scan results matched'
+                  : 'No Scan History Yet',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textDark,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                _searchQuery.isNotEmpty
+                    ? 'Try searching with a different product brand or category keyword ("$_searchQuery").'
+                    : 'Scan your first skincare product to check ingredients, safety ratings, and detailed analysis.',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textGray,
+                  height: 1.45,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            if (_searchQuery.isEmpty) ...[
+              const SizedBox(height: 28),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/scan'),
+                icon: const Icon(Icons.document_scanner_rounded, size: 18),
+                label: const Text('Start First Scan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  shadowColor: AppColors.primaryGreen.withValues(alpha: 0.4),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
