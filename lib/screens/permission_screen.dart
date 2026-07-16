@@ -127,7 +127,7 @@ class _PermissionScreenState extends State<PermissionScreen>
             Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706)),
             SizedBox(width: 8),
             Text(
-              'Izin Diperlukan',
+              'Permission Required',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
           ],
