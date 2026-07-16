@@ -122,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ],
                               ),
                               Text(
-                                'AI Skin Companion',
+                                'Skincare Analyzer',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,

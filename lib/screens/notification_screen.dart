@@ -106,15 +106,15 @@ class _NotificationScreenState extends State<NotificationScreen>
   String _getCategoryLabel(FcmNotification n) {
     final title = n.title.toLowerCase();
     if (title.contains('scan') || title.contains('selesai')) {
-      return 'Analisis AI';
+      return 'Scan Result';
     }
     if (title.contains('tip') || title.contains('perawatan')) {
       return 'Skincare Tips';
     }
     if (title.contains('ingat') || title.contains('reminder')) {
-      return 'Pengingat';
+      return 'Reminder';
     }
-    return 'Pembaruan';
+    return 'Update';
   }
 
   // ── Build ────────────────────────────────────────────────────
@@ -405,7 +405,7 @@ class _NotificationScreenState extends State<NotificationScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              'Semua pembaruan, hasil analisis AI, dan tips\nperawatan kulit dari Dermify akan tampil di sini.',
+              'Semua pembaruan, hasil scan, dan tips\nperawatan kulit dari Dermify akan tampil di sini.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,

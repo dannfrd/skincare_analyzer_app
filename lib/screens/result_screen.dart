@@ -308,21 +308,21 @@ class _ResultScreenState extends State<ResultScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryGreenDark.withValues(alpha: 0.85),
+                      color: Colors.black.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.auto_awesome, size: 12, color: Colors.white),
+                        Icon(Icons.document_scanner_outlined, size: 12, color: Colors.white),
                         SizedBox(width: 4),
                         Text(
-                          'OCR + AI + RAG',
+                          'Scanned Image',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ],
@@ -453,7 +453,7 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
           const SizedBox(height: 3),
           const Text(
-            'Based on ingredient matching + AI analysis',
+            'Based on ingredient matching & safety data',
             style: TextStyle(fontSize: 12.5, color: AppColors.textGray),
           ),
           const SizedBox(height: 14),
@@ -615,7 +615,7 @@ class _ResultScreenState extends State<ResultScreen> {
     if (datasetHarmful && datasetBpomWarning != null) {
       tone = const Color(0xFFB42318);
       icon = Icons.dangerous_rounded;
-      statusLabel = '🚨 $datasetBpomWarning';
+      statusLabel = datasetBpomWarning;
     } else if (unknown && !foundInDataset) {
       tone = const Color(0xFFB7791F);
       icon = Icons.help_outline_rounded;
@@ -644,15 +644,15 @@ class _ResultScreenState extends State<ResultScreen> {
 
     final details = <_DetailItem>[];
     if (datasetDescription != null && datasetDescription.isNotEmpty) {
-      details.add(_DetailItem('📖', _cleanMarkdownSymbols(_clip(datasetDescription, maxLen: 160))));
+      details.add(_DetailItem('Deskripsi', _cleanMarkdownSymbols(_clip(datasetDescription, maxLen: 160))));
     } else if (description != null && description.isNotEmpty) {
-      details.add(_DetailItem('📖', _cleanMarkdownSymbols(_clip(description, maxLen: 160))));
+      details.add(_DetailItem('Deskripsi', _cleanMarkdownSymbols(_clip(description, maxLen: 160))));
     }
     if (datasetWarnings != null && datasetWarnings.isNotEmpty) {
-      details.add(_DetailItem('⚠️', _cleanMarkdownSymbols(datasetWarnings)));
+      details.add(_DetailItem('Peringatan', _cleanMarkdownSymbols(datasetWarnings)));
     }
     if (datasetOrigin != null && datasetOrigin.isNotEmpty) {
-      details.add(_DetailItem('🌿', 'Asal: $datasetOrigin'));
+      details.add(_DetailItem('Asal', datasetOrigin));
     }
 
     final funcLabel = (datasetFunctions?.isNotEmpty == true)
@@ -737,13 +737,29 @@ class _ResultScreenState extends State<ResultScreen> {
                   ...details.map(
                     (item) => Padding(
                       padding: const EdgeInsets.only(bottom: 3),
-                      child: Text(
-                        '${item.emoji} ${item.text}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textGray,
-                          height: 1.4,
-                        ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${item.label}: ',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primaryGreenDark,
+                              fontWeight: FontWeight.w600,
+                              height: 1.4,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              item.text,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textGray,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -873,15 +889,15 @@ class _ResultScreenState extends State<ResultScreen> {
     final sections = _parseMarkdownSections(aiText);
 
     return _buildSectionCard(
-      title: 'Insight AI',
-      icon: Icons.auto_awesome_rounded,
+      title: 'Ingredient Insights',
+      icon: Icons.lightbulb_outline_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
           if (sections.isEmpty)
-            const Text(
-              'AI Insight not available.',
+              const Text(
+              'No insights available.',
               style: TextStyle(fontSize: 14, color: AppColors.textGray),
             )
           else
@@ -898,7 +914,7 @@ class _ResultScreenState extends State<ResultScreen> {
                       size: 15, color: AppColors.primaryGreenDark),
                   SizedBox(width: 6),
                   Text(
-                    'View Full AI Analysis',
+                    'View Full Analysis',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -1172,7 +1188,7 @@ class _ResultScreenState extends State<ResultScreen> {
         const SizedBox(height: 4),
         Center(
           child: Text(
-            '💡 Products based on active ingredients.',
+            'Products based on matching active ingredients.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 10.5,
@@ -1898,7 +1914,7 @@ class _MarkdownSection {
 }
 
 class _DetailItem {
-  final String emoji;
+  final String label;
   final String text;
-  const _DetailItem(this.emoji, this.text);
+  const _DetailItem(this.label, this.text);
 }
