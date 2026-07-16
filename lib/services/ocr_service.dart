@@ -216,6 +216,7 @@ class OcrService {
   static Future<String> _extractWithMlKit(File imageFile) async {
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
     try {
+      // 1. Coba baca gambar asli (raw) murni dengan MLKit
       final inputImage = InputImage.fromFile(imageFile);
       final result = await recognizer.processImage(inputImage);
       final lines = <OcrTextLine>[
@@ -227,7 +228,36 @@ class OcrService {
               left: line.boundingBox.left,
             ),
       ];
-      return IngredientTextFilter.selectFromLines(lines);
+      String rawText = IngredientTextFilter.selectFromLines(lines);
+
+      // 2. Jika hasil murni MLKit lemah/rusak ('atoyo J P O' akibat pantulan silau kemasan silver),
+      // jalankan MLKit pada gambar hasil peningkatan kontras & anti-glare (_prepareImageForOcr)
+      if (_looksWeak(rawText)) {
+        try {
+          final processedFile = await _prepareImageForOcr(imageFile);
+          if (processedFile.path != imageFile.path) {
+            final processedImage = InputImage.fromFile(processedFile);
+            final processedResult = await recognizer.processImage(processedImage);
+            final processedLines = <OcrTextLine>[
+              for (final block in processedResult.blocks)
+                for (final line in block.lines)
+                  OcrTextLine(
+                    text: line.text,
+                    top: line.boundingBox.top,
+                    left: line.boundingBox.left,
+                  ),
+            ];
+            String enhancedText = IngredientTextFilter.selectFromLines(processedLines);
+            if (enhancedText.trim().length > rawText.trim().length) {
+              return enhancedText;
+            }
+          }
+        } catch (_) {
+          // Abaikan error preprocessing dan kembalikan rawText
+        }
+      }
+
+      return rawText;
     } catch (_) {
       return '';
     } finally {
@@ -241,6 +271,8 @@ class OcrService {
 
   static Future<String> _extractWithPaddleOcr(File imageFile) async {
     final engine = await _getPaddleOcr();
+    
+    // 100% Murni PaddleOCR dari gambar asli (raw) tanpa manipulasi kontras atau preprocessing
     final imageBytes = await imageFile.readAsBytes();
     final results = await engine.recognize(imageBytes);
     final lines = <String>[];
@@ -251,7 +283,7 @@ class OcrService {
         lines.add(text);
       }
     }
-
+    
     return IngredientTextFilter.selectFromPlainText(lines.join('\n'));
   }
 
