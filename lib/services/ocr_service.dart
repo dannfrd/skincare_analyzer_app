@@ -25,7 +25,7 @@ class OcrService {
   // - 'tesseract' : Menggunakan Tesseract murni
   // - 'paddleocr' : Menggunakan PaddleOCR secara lokal di perangkat
   // ==================================================
-  static const String activeEngine = 'mlkit';
+  static const String activeEngine = 'paddleocr';
 
   static Future<String> extractText(File imageFile) async {
     if (!await imageFile.exists()) {

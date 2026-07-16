@@ -87,6 +87,7 @@ class _SkincareTipsScreenState extends State<SkincareTipsScreen> {
                 ),
                 child: TextField(
                   controller: _searchController,
+                  onTapOutside: (event) => FocusScope.of(context).unfocus(),
                   onChanged: (value) {
                     setState(() {
                       _searchQuery = value;
