@@ -14,15 +14,17 @@ class OcrService {
   static const String _trainedDataAsset = 'assets/tessdata/eng.traineddata';
   static PaddleOcr? _paddleOcr;
   static Future<PaddleOcr>? _paddleOcrInit;
-  static const String _paddleModelBaseUrl = 'https://paddleocr.bj.bcebos.com/PP-OCRv3/english';
-  static const String _paddleDictUrl = 'https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/en_dict.txt';
+  static const String _paddleModelBaseUrl =
+      'https://paddleocr.bj.bcebos.com/PP-OCRv3/english';
+  static const String _paddleDictUrl =
+      'https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/en_dict.txt';
 
   // ==================================================
   // KONFIGURASI ENGINE PENELITIAN (TA):
   // Ubah konstanta ini untuk mengganti engine utama aplikasi:
   // - 'hybrid'    : Menggunakan MLKit dengan fallback Tesseract (Default)
   // - 'mlkit'     : Menggunakan Google MLKit murni (Aktif untuk Pengujian TA)
-  // - 'tesseract' : Menggunakan Tesseract murni
+  // - 'tesseract' : Menggunakan Tesseract murni (Aktif untuk Pengujian TA di branch ini)
   // - 'paddleocr' : Menggunakan PaddleOCR secara lokal di perangkat
   // ==================================================
   static const String activeEngine = 'paddleocr';
@@ -146,12 +148,16 @@ class OcrService {
       print("Active Engine: ${activeEngine.toUpperCase()}");
       // ignore: avoid_print
       print("--------------------------------------------------");
-      
+
       if (activeEngine == 'paddleocr') {
         // ignore: avoid_print
         print(">>> PADDLE OCR MURNI LOKAL (Waktu: $paddleTimeMs ms):");
         // ignore: avoid_print
-        print(paddleText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : paddleText.trim());
+        print(
+          paddleText.trim().isEmpty
+              ? "[Tidak ada teks terdeteksi]"
+              : paddleText.trim(),
+        );
         // ignore: avoid_print
         print("--------------------------------------------------");
       }
@@ -160,25 +166,39 @@ class OcrService {
         // ignore: avoid_print
         print(">>> MLKIT MURNI (Waktu Eksekusi: $mlKitTimeMs ms):");
         // ignore: avoid_print
-        print(mlKitText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : mlKitText.trim());
+        print(
+          mlKitText.trim().isEmpty
+              ? "[Tidak ada teks terdeteksi]"
+              : mlKitText.trim(),
+        );
         // ignore: avoid_print
         print("--------------------------------------------------");
       }
-      
+
       if (activeEngine == 'tesseract' || activeEngine == 'hybrid') {
         // ignore: avoid_print
         print(">>> TESSERACT MURNI (Waktu Eksekusi: $tessTimeMs ms):");
         // ignore: avoid_print
-        print(tessText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : tessText.trim());
+        print(
+          tessText.trim().isEmpty
+              ? "[Tidak ada teks terdeteksi]"
+              : tessText.trim(),
+        );
         // ignore: avoid_print
         print("--------------------------------------------------");
       }
-      
+
       if (activeEngine == 'hybrid') {
         // ignore: avoid_print
-        print(">>> HYBRID MLKIT + TESSERACT (Waktu Eksekusi: $hybridTimeMs ms):");
+        print(
+          ">>> HYBRID MLKIT + TESSERACT (Waktu Eksekusi: $hybridTimeMs ms):",
+        );
         // ignore: avoid_print
-        print(hybridText.trim().isEmpty ? "[Tidak ada teks terdeteksi]" : hybridText.trim());
+        print(
+          hybridText.trim().isEmpty
+              ? "[Tidak ada teks terdeteksi]"
+              : hybridText.trim(),
+        );
         // ignore: avoid_print
         print("--------------------------------------------------");
       }
@@ -198,7 +218,9 @@ class OcrService {
       }
 
       if (returnedText.trim().isEmpty) {
-        throw Exception('OCR did not detect any text in the image using ${activeEngine.toUpperCase()}');
+        throw Exception(
+          'OCR did not detect any text in the image using ${activeEngine.toUpperCase()}',
+        );
       }
 
       return returnedText.trim();
@@ -237,7 +259,9 @@ class OcrService {
           final processedFile = await _prepareImageForOcr(imageFile);
           if (processedFile.path != imageFile.path) {
             final processedImage = InputImage.fromFile(processedFile);
-            final processedResult = await recognizer.processImage(processedImage);
+            final processedResult = await recognizer.processImage(
+              processedImage,
+            );
             final processedLines = <OcrTextLine>[
               for (final block in processedResult.blocks)
                 for (final line in block.lines)
@@ -247,7 +271,9 @@ class OcrService {
                     left: line.boundingBox.left,
                   ),
             ];
-            String enhancedText = IngredientTextFilter.selectFromLines(processedLines);
+            String enhancedText = IngredientTextFilter.selectFromLines(
+              processedLines,
+            );
             if (enhancedText.trim().length > rawText.trim().length) {
               return enhancedText;
             }
@@ -271,7 +297,7 @@ class OcrService {
 
   static Future<String> _extractWithPaddleOcr(File imageFile) async {
     final engine = await _getPaddleOcr();
-    
+
     // 100% Murni PaddleOCR dari gambar asli (raw) tanpa manipulasi kontras atau preprocessing
     final imageBytes = await imageFile.readAsBytes();
     final results = await engine.recognize(imageBytes);
@@ -283,7 +309,7 @@ class OcrService {
         lines.add(text);
       }
     }
-    
+
     return IngredientTextFilter.selectFromPlainText(lines.join('\n'));
   }
 
@@ -339,7 +365,9 @@ class OcrService {
 
   static Future<Directory> _getPaddleModelsDirectory() async {
     final appDirectory = await getApplicationDocumentsDirectory();
-    final modelsDirectory = Directory('${appDirectory.path}${Platform.pathSeparator}paddleocr_models');
+    final modelsDirectory = Directory(
+      '${appDirectory.path}${Platform.pathSeparator}paddleocr_models',
+    );
     if (!await modelsDirectory.exists()) {
       await modelsDirectory.create(recursive: true);
     }
@@ -351,14 +379,18 @@ class OcrService {
     required Directory directory,
     required String fileName,
   }) async {
-    final targetFile = File('${directory.path}${Platform.pathSeparator}$fileName');
+    final targetFile = File(
+      '${directory.path}${Platform.pathSeparator}$fileName',
+    );
     if (await targetFile.exists() && await targetFile.length() > 0) {
       return targetFile;
     }
 
     final response = await http.get(Uri.parse(url));
     if (response.statusCode != 200) {
-      throw Exception('Failed to download PaddleOCR model: $url (${response.statusCode})');
+      throw Exception(
+        'Failed to download PaddleOCR model: $url (${response.statusCode})',
+      );
     }
 
     await targetFile.writeAsBytes(response.bodyBytes, flush: true);

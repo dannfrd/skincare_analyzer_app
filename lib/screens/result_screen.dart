@@ -308,21 +308,21 @@ class _ResultScreenState extends State<ResultScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: AppColors.primaryGreenDark.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.document_scanner_outlined, size: 12, color: Colors.white),
+                        Icon(Icons.auto_awesome, size: 12, color: Colors.white),
                         SizedBox(width: 4),
                         Text(
-                          'Scanned Image',
+                          'OCR + AI + RAG',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.3,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
                           ),
                         ),
                       ],
