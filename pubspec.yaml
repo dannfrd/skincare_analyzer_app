@@ -1,5 +1,5 @@
 name: skincare_analyzer_app
-description: "Skincare Analyzer App is a mobile application that helps users analyze their skincare products by scanning the ingredients list. It provides insights into the potential benefits and risks of the ingredients, allowing users to make informed decisions about their skincare routine."
+description: "Dermify - Aplikasi analisis produk skincare yang memindai daftar bahan, memberikan wawasan potensi manfaat dan risiko setiap bahan, serta membantu pengguna membuat keputusan perawatan kulit yang lebih cerdas."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
