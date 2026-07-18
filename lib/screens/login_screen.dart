@@ -140,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      step == 1 ? 'Lupa Password' : 'Buat Password Baru',
+                      step == 1 ? 'Forgot Password' : 'Create New Password',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -150,8 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 8),
                     Text(
                       step == 1
-                          ? 'Masukkan email akun Anda untuk memverifikasi dan mereset password.'
-                          : 'Silakan masukkan password baru untuk akun ${resetEmailController.text}.',
+                          ? 'Enter your account email to verify and reset your password.'
+                          : 'Please enter a new password for the account ${resetEmailController.text}.',
                       style: TextStyle(fontSize: 14, color: AppColors.textGray),
                     ),
                     const SizedBox(height: 20),
@@ -193,14 +193,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: _buildInputDecoration(hintText: 'your@email.com'),
                         validator: (val) {
-                          if (val == null || val.isEmpty) return 'Masukkan email Anda';
-                          if (!val.contains('@')) return 'Email tidak valid';
+                          if (val == null || val.isEmpty) return 'Please enter your email';
+                          if (!val.contains('@')) return 'Invalid email address';
                           return null;
                         },
                       ),
                     ] else ...[
                       Text(
-                        'Password Baru',
+                        'New Password',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -212,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: newPasswordController,
                         obscureText: obscureNew,
                         decoration: _buildInputDecoration(
-                          hintText: 'Minimal 6 karakter',
+                          hintText: 'Minimum 6 characters',
                           suffixIcon: IconButton(
                             icon: Icon(
                               obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -223,13 +223,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         validator: (val) {
-                          if (val == null || val.length < 6) return 'Password minimal 6 karakter';
+                          if (val == null || val.length < 6) return 'Password must be at least 6 characters';
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Konfirmasi Password',
+                        'Confirm Password',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -241,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: confirmPasswordController,
                         obscureText: obscureConfirm,
                         decoration: _buildInputDecoration(
-                          hintText: 'Ulangi password baru',
+                          hintText: 'Repeat new password',
                           suffixIcon: IconButton(
                             icon: Icon(
                               obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -252,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         validator: (val) {
-                          if (val != newPasswordController.text) return 'Password tidak cocok';
+                          if (val != newPasswordController.text) return 'Passwords do not match';
                           return null;
                         },
                       ),
@@ -288,7 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     _passwordController.text = newPasswordController.text;
                                     ScaffoldMessenger.of(this.context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Password berhasil diubah. Silakan klik Login.'),
+                                        content: Text('Password has been successfully changed. Please log in.'),
                                         backgroundColor: AppColors.primaryGreen,
                                       ),
                                     );
@@ -315,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                               )
                             : Text(
-                                step == 1 ? 'Verifikasi Email' : 'Simpan Password',
+                                step == 1 ? 'Verify Email' : 'Save Password',
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                       ),

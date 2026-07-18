@@ -180,6 +180,7 @@ class _IngredientDatabaseScreenState extends State<IngredientDatabaseScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
+                    onTapOutside: (event) => FocusScope.of(context).unfocus(),
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'Search ingredient...',

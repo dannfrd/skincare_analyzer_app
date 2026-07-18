@@ -34,9 +34,8 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
     try {
       final Map<String, dynamic> result;
 
-      if (OcrService.activeEngine == 'paddleocr') {
-        // PaddleOCR mobile plugin v0.2 masih tidak stabil di semua device,
-        // jadi mode ini memakai backend PaddleOCR yang sudah terbukti jalan.
+      if (OcrService.activeEngine == 'server') {
+        // Server-Driven OCR: kirim gambar (yang otomatis dikompres di ApiService) langsung ke backend
         result = await ApiService.analyzeImage(
           widget.payload.imageFile,
           productName: widget.payload.productName,
@@ -44,7 +43,7 @@ class _ScanProgressScreenState extends State<ScanProgressScreen> {
           productCategory: widget.payload.productCategory,
         );
       } else {
-        // Lakukan OCR lokal (Tesseract/MLKit/Hybrid) terlebih dahulu di HP
+        // Lakukan OCR lokal (MLKit) terlebih dahulu di HP, lalu kirim teks ke backend
         final extractedText = await OcrService.extractText(
           widget.payload.imageFile,
         );

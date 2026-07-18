@@ -142,16 +142,23 @@ class _ScanScreenState extends State<ScanScreen> {
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: path,
         compressFormat: ImageCompressFormat.jpg,
-        compressQuality: 100,
+        compressQuality: 95,
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Crop Image',
             toolbarColor: AppColors.primaryGreen,
             toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
+            activeControlsWidgetColor: AppColors.primaryGreen,
             lockAspectRatio: false,
+            hideBottomControls: false,
+            showCropGrid: true,
           ),
-          IOSUiSettings(title: 'Crop Image'),
+          IOSUiSettings(
+            title: 'Crop Image',
+            aspectRatioLockEnabled: false,
+            resetAspectRatioEnabled: true,
+            aspectRatioPickerButtonHidden: false,
+          ),
         ],
       );
       if (croppedFile != null && mounted) {
@@ -183,6 +190,10 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final previewHeight = (screenHeight * 0.30).clamp(180.0, 300.0);
+    final emptyStateHeight = (screenHeight * 0.38).clamp(220.0, 360.0);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
@@ -208,108 +219,114 @@ class _ScanScreenState extends State<ScanScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              Expanded(
-                child: _capturedImage != null
-                    ? _buildImagePreview()
-                    : _buildEmptyState(),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                _capturedImage != null ? 'Foto Dipilih' : 'Pilih Gambar',
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Text(
-                  _capturedImage != null
-                      ? 'Review the image above, fill in the product information, then start the analysis.'
-                      : 'Select an image source to scan the product label.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: AppColors.textGray, fontSize: 13),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (_capturedImage != null) ...[
-                _buildProductForm(),
-                const SizedBox(height: 14),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
                 SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _proceedToAnalysis,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    icon: const Icon(Icons.science),
-                    label: const Text(
-                      'Analisis Bahan',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                  height: _capturedImage != null
+                      ? previewHeight
+                      : emptyStateHeight,
+                  child: _capturedImage != null
+                      ? _buildImagePreview()
+                      : _buildEmptyState(),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  _capturedImage != null ? 'Foto Dipilih' : 'Pilih Gambar',
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Text(
+                    _capturedImage != null
+                        ? 'Review the image above, fill in the product information, then start the analysis.'
+                        : 'Select an image source to scan the product label.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: AppColors.textGray, fontSize: 13),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _openCamera,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryGreen,
-                          side: const BorderSide(
-                              color: AppColors.primaryGreen, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.camera_alt, size: 18),
-                        label: const Text('Ulangi',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                if (_capturedImage != null) ...[
+                  _buildProductForm(),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _proceedToAnalysis,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.science),
+                      label: const Text(
+                        'Analisis Bahan',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _pickFromGallery,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textDark,
-                          side: BorderSide(
-                              color: Colors.grey.shade300, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _openCamera,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryGreen,
+                            side: const BorderSide(
+                                color: AppColors.primaryGreen, width: 1.5),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.camera_alt, size: 18),
+                          label: const Text('Ulangi',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
-                        icon: const Icon(Icons.photo_library_outlined,
-                            size: 18),
-                        label: const Text('Gallery',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tips: Take photos near the "Ingredients / Composition" section, avoid light reflections.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 11.5,
-                      height: 1.4),
-                ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _pickFromGallery,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textDark,
+                            side: BorderSide(
+                                color: Colors.grey.shade300, width: 1.5),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.photo_library_outlined,
+                              size: 18),
+                          label: const Text('Gallery',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tips: Take photos near the "Ingredients / Composition" section, avoid light reflections.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 11.5,
+                        height: 1.4),
+                  ),
+                ],
+                const SizedBox(height: 20),
               ],
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
       ),
@@ -330,6 +347,37 @@ class _ScanScreenState extends State<ScanScreen> {
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Material(
+              color: AppColors.primaryGreen.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(30),
+              elevation: 4,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(30),
+                onTap: () => _cropImage(_capturedImage!.path),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.crop_rotate, color: Colors.white, size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        'Crop Image',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -487,6 +535,7 @@ class _ScanScreenState extends State<ScanScreen> {
         TextField(
           controller: controller,
           textInputAction: TextInputAction.next,
+          onTapOutside: (event) => FocusScope.of(context).unfocus(),
           style: const TextStyle(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,

@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 import '../config/app_config.dart';
 import '../utils/network_helper.dart';
@@ -84,8 +88,9 @@ class ApiService {
         request.fields['product_category'] = category;
       }
 
+      final fileToSend = await _compressImage(imageFile, maxWidth: 1400, quality: 85);
       request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
+        await http.MultipartFile.fromPath('file', fileToSend.path),
       );
 
       var streamedResponse = await request.send().timeout(
@@ -459,6 +464,56 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching ingredient metrics: $e');
+    }
+  }
+
+  /// Kompresi dan resize gambar di HP sebelum di-upload agar proses upload super cepat (<0.5s)
+  /// dan dijalankan di background Isolate via compute() supaya animasi loading UI tidak lag/stutter.
+  static Future<File> _compressImage(File file, {int maxWidth = 1400, int quality = 85}) async {
+    try {
+      if (!await file.exists()) return file;
+      final bytes = await file.readAsBytes();
+      if (bytes.length < 250 * 1024) return file; // Jika sudah di bawah 250 KB, langsung kirim
+
+      // Jalankan komputasi berat (decode, resize, encode JPEG) di background Isolate CPU agar UI tetap 60 FPS
+      final resizedBytes = await compute(_imageCompressionWorker, {
+        'bytes': bytes,
+        'maxWidth': maxWidth,
+        'quality': quality,
+      });
+
+      if (resizedBytes == null) return file;
+
+      final tempDir = await getTemporaryDirectory();
+      final compressedFile = File('${tempDir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await compressedFile.writeAsBytes(resizedBytes);
+      return compressedFile;
+    } catch (e) {
+      return file;
+    }
+  }
+
+  static Uint8List? _imageCompressionWorker(Map<String, dynamic> params) {
+    try {
+      final bytes = params['bytes'] as Uint8List;
+      final maxWidth = params['maxWidth'] as int;
+      final quality = params['quality'] as int;
+
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) return null;
+
+      int targetWidth = decoded.width;
+      if (decoded.width > maxWidth) {
+        targetWidth = maxWidth;
+      }
+      final resized = img.copyResize(
+        decoded,
+        width: targetWidth,
+        interpolation: img.Interpolation.cubic,
+      );
+      return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
+    } catch (_) {
+      return null;
     }
   }
 }
