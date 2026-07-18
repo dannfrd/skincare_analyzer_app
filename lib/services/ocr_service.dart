@@ -10,9 +10,9 @@ class OcrService {
   // ==================================================
   // KONFIGURASI ENGINE PENELITIAN (TA):
   // - 'server'    : Server-Driven OCR (Mengirim foto yang sudah dikompres langsung ke backend PP-OCRv4 / Cloud AI)
-  // - 'mlkit'     : Menggunakan Google MLKit murni di HP (On-Device Fallback)
+  // - 'mlkit'     : Menggunakan Google MLKit murni di HP (On-Device, tidak butuh internet untuk OCR)
   // ==================================================
-  static const String activeEngine = 'server';
+  static const String activeEngine = 'mlkit';
 
   static Future<String> extractText(File imageFile) async {
     if (!await imageFile.exists()) {
