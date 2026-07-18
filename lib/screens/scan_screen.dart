@@ -142,16 +142,23 @@ class _ScanScreenState extends State<ScanScreen> {
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: path,
         compressFormat: ImageCompressFormat.jpg,
-        compressQuality: 100,
+        compressQuality: 95,
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Crop Image',
             toolbarColor: AppColors.primaryGreen,
             toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
+            activeControlsWidgetColor: AppColors.primaryGreen,
             lockAspectRatio: false,
+            hideBottomControls: false,
+            showCropGrid: true,
           ),
-          IOSUiSettings(title: 'Crop Image'),
+          IOSUiSettings(
+            title: 'Crop Image',
+            aspectRatioLockEnabled: false,
+            resetAspectRatioEnabled: true,
+            aspectRatioPickerButtonHidden: false,
+          ),
         ],
       );
       if (croppedFile != null && mounted) {
@@ -340,6 +347,37 @@ class _ScanScreenState extends State<ScanScreen> {
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Material(
+              color: AppColors.primaryGreen.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(30),
+              elevation: 4,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(30),
+                onTap: () => _cropImage(_capturedImage!.path),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.crop_rotate, color: Colors.white, size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        'Crop Image',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
