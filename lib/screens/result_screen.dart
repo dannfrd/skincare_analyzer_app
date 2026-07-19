@@ -1140,6 +1140,19 @@ class _ResultScreenState extends State<ResultScreen> {
                 letterSpacing: 0.1,
               ),
             ),
+            if (!_isLoadingRecs && _recommendations.length > 2) ...[
+              const Spacer(),
+              Icon(Icons.swipe_left_rounded, size: 15, color: AppColors.textGray.withValues(alpha: 0.7)),
+              const SizedBox(width: 4),
+              Text(
+                'Geser',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.textGray.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 12),
