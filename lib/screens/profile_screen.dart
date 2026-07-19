@@ -480,6 +480,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.logout_rounded,
                       title: 'Logout',
                       onTap: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text(
+                              'Confirm Logout',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            content: const Text('Are you sure you want to log out from your account?'),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel', style: TextStyle(color: AppColors.textGray, fontWeight: FontWeight.bold)),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm != true) return;
+
                         await UserSession.clearSession();
                         if (context.mounted) {
                           Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);

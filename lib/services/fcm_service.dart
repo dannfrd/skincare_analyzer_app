@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../main.dart';
 import 'api_service.dart';
 import 'user_session.dart';
 
@@ -93,8 +94,8 @@ class FcmService {
     // 1. Setup flutter_local_notifications
     await _setupLocalNotifications();
 
-    // 2. Minta izin notifikasi dari user
-    await _requestPermission();
+    // 2. Izin notifikasi dari user ditunda ke PermissionScreen
+    // (dihapus dari sini agar tidak muncul saat splash screen)
 
     // 3. Subscribe ke topic 'all' (sesuai backend)
     await _fcm.subscribeToTopic(_fcmTopic);
@@ -112,6 +113,7 @@ class FcmService {
     final initialMessage = await _fcm.getInitialMessage();
     if (initialMessage != null) {
       await _saveAndRefresh(initialMessage);
+      _navigateToScreen(initialMessage);
     }
 
     // 8. Print FCM token (berguna untuk testing kirim ke device tertentu)
@@ -138,8 +140,17 @@ class FcmService {
     await _localNotif.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (details) {
-        // Bisa navigasi ke halaman notifikasi jika perlu
         debugPrint('Local notification tapped: ${details.payload}');
+        if (details.payload != null) {
+          try {
+            final data = jsonDecode(details.payload!);
+            _navigateBasedOnData(data);
+          } catch (e) {
+            _navigateBasedOnData({});
+          }
+        } else {
+          _navigateBasedOnData({});
+        }
       },
     );
 
@@ -151,7 +162,7 @@ class FcmService {
   }
 
   // ── Request permission ──────────────────────────────────────
-  Future<void> _requestPermission() async {
+  Future<void> requestPermission() async {
     final settings = await _fcm.requestPermission(
       alert: true,
       announcement: false,
@@ -180,6 +191,34 @@ class FcmService {
   Future<void> _onMessageOpenedApp(RemoteMessage message) async {
     debugPrint('📨 App opened from notification: ${message.notification?.title}');
     await _saveAndRefresh(message);
+    _navigateToScreen(message);
+  }
+  
+  // Helper navigasi
+  void _navigateToScreen(RemoteMessage message) {
+    _navigateBasedOnData(message.data);
+  }
+  
+  void _navigateBasedOnData(Map<String, dynamic> data) {
+    final screen = data['screen'];
+    
+    // Tunggu sesaat agar frame utama selesai di-build
+    Future.delayed(const Duration(milliseconds: 300), () {
+      final nav = navigatorKey.currentState;
+      if (nav == null) return;
+      
+      if (screen == 'history') {
+        // Navigasi ke main tab history jika memungkinkan, atau push route khusus
+        nav.pushNamed('/main'); 
+      } else if (screen == 'scan') {
+        nav.pushNamed('/scan');
+      } else if (screen == 'tips_skincare') {
+        nav.pushNamed('/tips');
+      } else {
+        // Default: buka halaman daftar notifikasi
+        nav.pushNamed('/notifications');
+      }
+    });
   }
 
   // ── Tampilkan local notification ────────────────────────────
@@ -199,7 +238,6 @@ class FcmService {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
-          color: const Color(0xFF68D377), // primaryGreen
           styleInformation: BigTextStyleInformation(notification.body ?? ''),
         ),
       ),

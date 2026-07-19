@@ -413,22 +413,37 @@ class ApiService {
   }
 
   /// Fallback jika endpoint /categories tidak tersedia (offline / error).
+  /// Kategori berdasarkan definisi BPOM & standar skincare internasional.
+  /// Hanya mencakup produk perawatan kulit wajah (bukan makeup/haircare).
   static List<Map<String, dynamic>> _fallbackCategories() {
     return const [
-      {'id': 'toner',       'name': 'Toner'},
-      {'id': 'serum',       'name': 'Serum'},
-      {'id': 'moisturizer', 'name': 'Moisturizer'},
-      {'id': 'sunscreen',   'name': 'Sunscreen'},
-      {'id': 'cleanser',    'name': 'Cleanser'},
-      {'id': 'exfoliator',  'name': 'Exfoliator'},
-      {'id': 'eye_cream',   'name': 'Eye Cream'},
-      {'id': 'lip_care',    'name': 'Lip Care'},
-      {'id': 'mask',        'name': 'Mask'},
-      {'id': 'body_lotion', 'name': 'Body Lotion'},
-      {'id': 'body_wash',   'name': 'Body Wash'},
-      {'id': 'essence',     'name': 'Essence'},
-      {'id': 'primer',      'name': 'Primer'},
-      {'id': 'bb_cc_cream', 'name': 'BB / CC Cream'},
+      // Pembersih
+      {'id': 'cleanser',          'name': 'Cleanser'},
+      {'id': 'micellar_water',    'name': 'Micellar Water'},
+      {'id': 'cleansing_oil',     'name': 'Cleansing Oil/Balm'},
+      // Treatment Dasar
+      {'id': 'toner',             'name': 'Toner'},
+      {'id': 'essence',           'name': 'Essence'},
+      // Treatment Aktif
+      {'id': 'serum',             'name': 'Serum'},
+      {'id': 'ampoule',           'name': 'Ampoule'},
+      {'id': 'spot_treatment',    'name': 'Spot Treatment'},
+      {'id': 'retinol',           'name': 'Retinol'},
+      // Pelembap
+      {'id': 'moisturizer',       'name': 'Moisturizer'},
+      {'id': 'night_cream',       'name': 'Night Cream'},
+      // Mata & Bibir
+      {'id': 'eye_care',          'name': 'Eye Care'},
+      {'id': 'lip_care',          'name': 'Lip Care'},
+      // Pelindung
+      {'id': 'sunscreen',         'name': 'Sunscreen'},
+      // Perawatan Berkala
+      {'id': 'exfoliator',        'name': 'Exfoliator'},
+      {'id': 'face_mask',         'name': 'Face Mask'},
+      {'id': 'sheet_mask',        'name': 'Sheet Mask'},
+      {'id': 'facial_mist',       'name': 'Facial Mist'},
+      // Minyak Wajah
+      {'id': 'facial_oil',        'name': 'Facial Oil'},
     ];
   }
 

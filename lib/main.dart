@@ -66,12 +66,16 @@ class AppColors {
   static const Color surfaceGreen = Color(0xFFE8F6EA);
 }
 
+// Global navigator key for deep linking from background services
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class SkincareAnalyzerApp extends StatelessWidget {
   const SkincareAnalyzerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Skincare AI Analyzer',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
