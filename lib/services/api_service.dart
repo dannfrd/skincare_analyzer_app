@@ -308,12 +308,13 @@ class ApiService {
     }
   }
 
-  /// Update user profile details (name, email, profile_picture, password)
+  /// Update user profile details (name, email, profile_picture, password, fcm_token)
   static Future<Map<String, dynamic>> updateProfile({
     String? name,
     String? email,
     String? profilePicture,
     String? password,
+    String? fcmToken,
   }) async {
     final payload = <String, dynamic>{};
     if (name != null && name.isNotEmpty) payload['name'] = name;
@@ -322,6 +323,7 @@ class ApiService {
       payload['profile_picture'] = profilePicture;
     }
     if (password != null && password.isNotEmpty) payload['password'] = password;
+    if (fcmToken != null && fcmToken.isNotEmpty) payload['fcm_token'] = fcmToken;
 
     try {
       final response = await http.post(

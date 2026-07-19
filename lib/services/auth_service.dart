@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
+import 'fcm_service.dart';
 import 'user_session.dart';
 
 class AuthService {
@@ -84,6 +85,16 @@ class AuthService {
       if (response.statusCode == 200) {
         // Berhasil login (misalnya menerima token dan/atau data user)
         await UserSession.saveSession(data);
+
+        try {
+          final token = await FcmService.instance.getToken();
+          if (token != null) {
+            await ApiService.updateProfile(fcmToken: token);
+          }
+        } catch (e) {
+          debugPrint('Gagal kirim fcm token setelah login: $e');
+        }
+
         return data;
       } else {
         throw Exception(
@@ -130,6 +141,16 @@ class AuthService {
       // Status 200 (OK) atau 201 (Created)
       if (response.statusCode == 200 || response.statusCode == 201) {
         await UserSession.saveSession(data);
+
+        try {
+          final token = await FcmService.instance.getToken();
+          if (token != null) {
+            await ApiService.updateProfile(fcmToken: token);
+          }
+        } catch (e) {
+          debugPrint('Gagal kirim fcm token setelah register: $e');
+        }
+
         return data;
       } else {
         throw Exception(
@@ -195,6 +216,16 @@ class AuthService {
       // 5. Tangkap token JWT dari backend dan data User.
       if (response.statusCode == 200 || response.statusCode == 201) {
         await UserSession.saveSession(data);
+
+        try {
+          final token = await FcmService.instance.getToken();
+          if (token != null) {
+            await ApiService.updateProfile(fcmToken: token);
+          }
+        } catch (e) {
+          debugPrint('Gagal kirim fcm token setelah login google: $e');
+        }
+
         return data;
       } else {
         throw Exception(
@@ -267,11 +298,11 @@ class AuthService {
     }
   }
 
-  /// Memverifikasi email untuk lupa password
+  /// Meminta pengiriman kode OTP untuk lupa password
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/auth/forgot-password'),
+        Uri.parse('${ApiService.baseUrl}/auth/forgot-password-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
@@ -302,16 +333,21 @@ class AuthService {
     }
   }
 
-  /// Mereset password pengguna
+  /// Mereset password pengguna dengan validasi OTP
   static Future<Map<String, dynamic>> resetPassword(
     String email,
+    String otp,
     String newPassword,
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/auth/reset-password'),
+        Uri.parse('${ApiService.baseUrl}/auth/reset-password-otp'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'new_password': newPassword}),
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+          'new_password': newPassword
+        }),
       );
 
       final data = _decodeResponse(response);
