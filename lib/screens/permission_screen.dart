@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/services/fcm_service.dart';
 import 'package:skincare_analyzer_app/services/permission_service.dart';
 import 'package:skincare_analyzer_app/services/user_session.dart';
 
@@ -92,6 +93,15 @@ class _PermissionScreenState extends State<PermissionScreen>
     setState(() => _isRequesting = true);
 
     final statuses = await PermissionService.requestAll();
+    
+    // Khusus untuk FCM / Notifikasi, jalankan permission request dari Firebase
+    // setelah permission system di-request.
+    try {
+      await FcmService.instance.requestPermission();
+    } catch (e) {
+      debugPrint('FCM Permission error: $e');
+    }
+
     if (mounted) {
       setState(() {
         _statuses = statuses;

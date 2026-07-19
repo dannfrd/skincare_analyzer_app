@@ -94,8 +94,8 @@ class FcmService {
     // 1. Setup flutter_local_notifications
     await _setupLocalNotifications();
 
-    // 2. Minta izin notifikasi dari user
-    await _requestPermission();
+    // 2. Izin notifikasi dari user ditunda ke PermissionScreen
+    // (dihapus dari sini agar tidak muncul saat splash screen)
 
     // 3. Subscribe ke topic 'all' (sesuai backend)
     await _fcm.subscribeToTopic(_fcmTopic);
@@ -162,7 +162,7 @@ class FcmService {
   }
 
   // ── Request permission ──────────────────────────────────────
-  Future<void> _requestPermission() async {
+  Future<void> requestPermission() async {
     final settings = await _fcm.requestPermission(
       alert: true,
       announcement: false,
