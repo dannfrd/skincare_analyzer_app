@@ -484,15 +484,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: const Text(
-                              'Konfirmasi Logout',
+                              'Confirm Logout',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            content: const Text('Apakah kamu yakin ingin keluar dari akun ini?'),
+                            content: const Text('Are you sure you want to log out from your account?'),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Batal', style: TextStyle(color: AppColors.textGray, fontWeight: FontWeight.bold)),
+                                child: const Text('Cancel', style: TextStyle(color: AppColors.textGray, fontWeight: FontWeight.bold)),
                               ),
                               ElevatedButton(
                                 onPressed: () => Navigator.pop(context, true),

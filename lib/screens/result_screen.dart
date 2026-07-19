@@ -1145,7 +1145,7 @@ class _ResultScreenState extends State<ResultScreen> {
               Icon(Icons.swipe_left_rounded, size: 15, color: AppColors.textGray.withValues(alpha: 0.7)),
               const SizedBox(width: 4),
               Text(
-                'Geser',
+                'Swipe',
                 style: TextStyle(
                   fontSize: 11.5,
                   color: AppColors.textGray.withValues(alpha: 0.8),
