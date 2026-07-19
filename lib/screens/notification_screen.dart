@@ -64,15 +64,15 @@ class _NotificationScreenState extends State<NotificationScreen>
   Color _getBadgeColor(FcmNotification n) {
     final title = n.title.toLowerCase();
     if (title.contains('scan') || title.contains('selesai')) {
-      return AppColors.primaryGreen;
+      return AppColors.primaryGreenDark;
     }
     if (title.contains('tip') || title.contains('perawatan')) {
-      return const Color(0xFFFFA726);
+      return const Color(0xFFF59E0B);
     }
     if (title.contains('ingat') || title.contains('reminder')) {
-      return const Color(0xFF42A5F5);
+      return const Color(0xFF3B82F6);
     }
-    return const Color(0xFFAB47BC); // update / lainnya
+    return AppColors.primaryGreenDark; // update / lainnya → hijau utama
   }
 
   Color _getBadgeBg(FcmNotification n) {
@@ -81,12 +81,12 @@ class _NotificationScreenState extends State<NotificationScreen>
       return AppColors.surfaceGreen;
     }
     if (title.contains('tip') || title.contains('perawatan')) {
-      return const Color(0xFFFFF3E0);
+      return const Color(0xFFFEF3C7);
     }
     if (title.contains('ingat') || title.contains('reminder')) {
-      return const Color(0xFFE3F2FD);
+      return const Color(0xFFEFF6FF);
     }
-    return const Color(0xFFF3E5F5);
+    return AppColors.surfaceGreen; // update / lainnya → hijau utama
   }
 
   IconData _getIcon(FcmNotification n) {
@@ -323,31 +323,36 @@ class _NotificationScreenState extends State<NotificationScreen>
               ],
             ),
           ),
-          Material(
-            color: Colors.white.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => FcmService.instance.markAllAsRead(),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.done_all_rounded,
-                        size: 15, color: AppColors.primaryGreenDark),
-                    const SizedBox(width: 5),
-                    const Text(
-                      'Baca Semua',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGreenDark,
-                      ),
+          GestureDetector(
+            onTap: () => FcmService.instance.markAllAsRead(),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreenDark,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreenDark.withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.done_all_rounded, size: 15, color: Colors.white),
+                  SizedBox(width: 5),
+                  Text(
+                    'Baca Semua',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
