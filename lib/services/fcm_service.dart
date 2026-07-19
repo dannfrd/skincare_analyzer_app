@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api_service.dart';
+import 'user_session.dart';
+
 // ─────────────────────────────────────────────────────────────
 // Top-level background message handler (harus di luar class)
 // ─────────────────────────────────────────────────────────────
@@ -114,6 +117,16 @@ class FcmService {
     // 8. Print FCM token (berguna untuk testing kirim ke device tertentu)
     final token = await _fcm.getToken();
     debugPrint('📲 FCM Token: $token');
+
+    // 9. Kirim token ke backend jika user sudah login
+    if (token != null && UserSession.isLoggedIn) {
+      try {
+        await ApiService.updateProfile(fcmToken: token);
+        debugPrint('✅ Berhasil mengirim FCM Token ke backend saat init');
+      } catch (e) {
+        debugPrint('❌ Gagal mengirim FCM Token ke backend saat init: $e');
+      }
+    }
   }
 
   // ── Setup local notifications ───────────────────────────────

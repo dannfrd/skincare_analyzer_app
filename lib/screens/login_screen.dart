@@ -95,6 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController(text: _emailController.text.trim());
+    final otpController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     final dialogFormKey = GlobalKey<FormState>();
@@ -200,6 +201,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ] else ...[
                       Text(
+                        'OTP Code',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textGray,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: otpController,
+                        keyboardType: TextInputType.number,
+                        decoration: _buildInputDecoration(hintText: 'Enter 6-digit OTP'),
+                        validator: (val) {
+                          if (val == null || val.isEmpty) return 'Please enter the OTP';
+                          if (val.length != 6) return 'OTP must be 6 digits';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
                         'New Password',
                         style: TextStyle(
                           fontSize: 14,
@@ -280,6 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   } else {
                                     await AuthService.resetPassword(
                                       resetEmailController.text.trim(),
+                                      otpController.text.trim(),
                                       newPasswordController.text,
                                     );
                                     if (!bottomSheetContext.mounted) return;
