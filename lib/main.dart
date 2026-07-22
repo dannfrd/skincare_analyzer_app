@@ -20,6 +20,7 @@ import 'screens/scan_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/skincare_tips_screen.dart';
 import 'screens/tip_detail_screen.dart';
+import 'screens/tutorial_screen.dart';
 import 'screens/ingredient_database_screen.dart';
 import 'services/api_service.dart';
 import 'services/fcm_service.dart';
@@ -118,6 +119,9 @@ class SkincareAnalyzerApp extends StatelessWidget {
             break;
           case '/permissions':
             builder = (context) => const PermissionScreen();
+            break;
+          case '/tutorial':
+            builder = (context) => const TutorialScreen();
             break;
           case '/login':
             builder = (context) => const LoginScreen();
