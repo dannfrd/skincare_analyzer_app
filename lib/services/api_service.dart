@@ -373,7 +373,7 @@ class ApiService {
         if (recs is List) {
           return recs
               .whereType<Map>()
-              .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
+              .map((item) => item.map((key, val) => MapEntry(key.toString(), val)))
               .toList();
         }
       }
