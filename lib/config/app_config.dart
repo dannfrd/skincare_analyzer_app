@@ -50,7 +50,7 @@ class AppConfig {
 		// 1. Listen on port 443 (HTTPS) or use reverse proxy (Nginx)
 		// 2. Have valid SSL certificate
 		// 3. CORS enabled for mobile app
-		return 'http://43.156.119.43';
+		return 'http://43.156.119.43:8000';
 		
 		// Fallback options if HTTPS doesn't work:
 		// return 'http://43.156.119.43';  // HTTP without SSL
