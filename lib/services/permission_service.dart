@@ -3,6 +3,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionService {
   static const _prefKey = 'permissions_requested_v1';
+  static const _tutorialKey = 'tutorial_seen_v1';
+
+  /// Returns true if the user has already seen the tutorial screen.
+  static Future<bool> hasTutorialBeenSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_tutorialKey) ?? false;
+  }
+
+  /// Mark that the user has completed/skipped the tutorial.
+  static Future<void> markTutorialSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_tutorialKey, true);
+  }
 
   /// Returns true if we already asked the user for permissions before.
   static Future<bool> hasRequestedBefore() async {

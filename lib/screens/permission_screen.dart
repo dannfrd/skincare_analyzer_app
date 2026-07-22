@@ -120,10 +120,18 @@ class _PermissionScreenState extends State<PermissionScreen>
     }
   }
 
-  void _navigateNext() {
-    final route =
-        UserSession.isLoggedIn ? '/main' : '/login';
-    Navigator.pushReplacementNamed(context, route);
+  Future<void> _navigateNext() async {
+    final tutorialSeen = await PermissionService.hasTutorialBeenSeen();
+    if (!mounted) return;
+
+    if (!tutorialSeen) {
+      // First time — show tutorial before proceeding
+      Navigator.pushReplacementNamed(context, '/tutorial');
+    } else {
+      // Returning user — go directly to main or login
+      final route = UserSession.isLoggedIn ? '/main' : '/login';
+      Navigator.pushReplacementNamed(context, route);
+    }
   }
 
   void _showDeniedDialog() {
