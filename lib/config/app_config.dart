@@ -38,9 +38,16 @@ class AppConfig {
 			return _customApiUrl.trim();
 		}
 
-		// Secara paksa menggunakan backend lokal (localhost/10.0.2.2) 
-		// untuk menghindari error koneksi ke VPS karena internet sedang down.
-		return developmentUrl;
+		// Priority 2: Environment-specific URLs
+		switch (_environment) {
+			case production:
+				return productionUrl;
+			case staging:
+				return stagingUrl;
+			case dev:
+			default:
+				return developmentUrl;
+		}
 	}
 
 	/// Production URL (Domain with HTTPS)
@@ -50,7 +57,7 @@ class AppConfig {
 		// 1. Listen on port 443 (HTTPS) or use reverse proxy (Nginx)
 		// 2. Have valid SSL certificate
 		// 3. CORS enabled for mobile app
-		return 'http://43.156.119.43:8000';
+		return 'http://43.156.119.43';
 		
 		// Fallback options if HTTPS doesn't work:
 		// return 'http://43.156.119.43';  // HTTP without SSL
