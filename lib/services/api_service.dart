@@ -371,10 +371,9 @@ class ApiService {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final recs = data['recommendations'];
         if (recs is List) {
-          return recs
-              .whereType<Map>()
-              .map((item) => item.map((key, val) => MapEntry(key.toString(), val)))
-              .toList();
+          return List<Map<String, dynamic>>.from(
+            recs.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+          );
         }
       }
       return [];
@@ -399,10 +398,9 @@ class ApiService {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final cats = data['categories'];
         if (cats is List) {
-          return cats
-              .whereType<Map>()
-              .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
-              .toList();
+          return List<Map<String, dynamic>>.from(
+            cats.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+          );
         }
       }
       return _fallbackCategories();
@@ -470,7 +468,7 @@ class ApiService {
         return list
             .map((json) {
               if (json is Map) {
-                return IngredientMetric.fromJson(json.map((k, v) => MapEntry(k.toString(), v)));
+                return IngredientMetric.fromJson(Map<String, dynamic>.from(json));
               }
               return null;
             })

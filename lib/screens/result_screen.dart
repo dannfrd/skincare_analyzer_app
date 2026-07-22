@@ -1861,10 +1861,9 @@ class _ResultScreenState extends State<ResultScreen> {
 
   static List<Map<String, dynamic>> _asMapList(dynamic value) {
     if (value is! List) return [];
-    return value
-        .whereType<Map>()
-        .map((item) => item.map((key, val) => MapEntry(key.toString(), val)))
-        .toList();
+    return List<Map<String, dynamic>>.from(
+      value.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+    );
   }
 
   static List<String> _asStringList(dynamic value) {
