@@ -98,7 +98,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
           }
         }
 
-        final imgUrl = _str(e['image_url']) ?? _str(analysis['image_url']) ?? _str(product['image_url']);
+        String? imgUrl = _str(e['image_url']) ?? _str(analysis['image_url']) ?? _str(product['image_url']);
+        if (imgUrl != null && imgUrl.startsWith('/uploads/')) {
+          imgUrl = '${ApiService.baseUrl}$imgUrl';
+        }
 
         // Brand: prioritize product_brand → product['brand'] → product['name'] → fallback
         final brand = _str(product['brand']) ??
@@ -878,7 +881,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         item.localImagePath != null && File(item.localImagePath!).existsSync();
     final hasNetworkImage = !hasLocalImage &&
         item.imageUrl != null &&
-        item.imageUrl!.startsWith('http');
+        (item.imageUrl!.startsWith('http') || item.imageUrl!.startsWith('/uploads'));
     final hasAnyImage = hasLocalImage || hasNetworkImage;
 
     return GestureDetector(
