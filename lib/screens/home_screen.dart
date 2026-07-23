@@ -32,9 +32,10 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: Colors.white,
@@ -55,9 +56,10 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                               Row(
                                 children: [
                                   const Text(
@@ -90,8 +92,10 @@ class HomeScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    ),
+                  ),
                       // Notification icon dengan badge unread count
                       ValueListenableBuilder<List<FcmNotification>>(
                         valueListenable: FcmService.instance.notifications,
