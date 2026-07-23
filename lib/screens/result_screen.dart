@@ -98,11 +98,19 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Future<void> _loadRecommendations() async {
-    final matched = _asMapList(widget.analysisData['matched_ingredients']);
-    final names = matched
-        .map((i) => (_asString(i['name']) ?? '').trim())
-        .where((n) => n.isNotEmpty)
-        .toList();
+    final rawMatched = widget.analysisData['matched_ingredients'];
+    List<String> names = [];
+    
+    if (rawMatched is List) {
+      if (rawMatched.isNotEmpty && rawMatched.first is String) {
+        names = rawMatched.map((e) => e.toString().trim()).toList();
+      } else {
+        names = _asMapList(rawMatched)
+            .map((i) => (_asString(i['name']) ?? '').trim())
+            .where((n) => n.isNotEmpty)
+            .toList();
+      }
+    }
 
     if (names.isEmpty) {
       if (mounted) setState(() => _isLoadingRecs = false);
@@ -1853,10 +1861,9 @@ class _ResultScreenState extends State<ResultScreen> {
 
   static List<Map<String, dynamic>> _asMapList(dynamic value) {
     if (value is! List) return [];
-    return value
-        .whereType<Map>()
-        .map((item) => item.map((key, val) => MapEntry(key.toString(), val)))
-        .toList();
+    return List<Map<String, dynamic>>.from(
+      value.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+    );
   }
 
   static List<String> _asStringList(dynamic value) {
