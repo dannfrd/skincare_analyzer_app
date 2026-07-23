@@ -197,7 +197,13 @@ class _PermissionScreenState extends State<PermissionScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 48),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 48),
 
                   // ── Header ──────────────────────────────────────────────
                   Center(
@@ -259,9 +265,9 @@ class _PermissionScreenState extends State<PermissionScreen>
                   const SizedBox(height: 36),
 
                   // ── Permission Cards ────────────────────────────────────
-                  Expanded(
-                    child: ListView.separated(
-                      physics: const NeverScrollableScrollPhysics(),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                       itemCount: _permissions.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
@@ -273,7 +279,6 @@ class _PermissionScreenState extends State<PermissionScreen>
                         );
                       },
                     ),
-                  ),
 
                   const SizedBox(height: 12),
 
@@ -305,6 +310,10 @@ class _PermissionScreenState extends State<PermissionScreen>
                   ),
 
                   const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   // ── CTA Button ──────────────────────────────────────────
                   SizedBox(
@@ -457,12 +466,14 @@ class _PermissionCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),

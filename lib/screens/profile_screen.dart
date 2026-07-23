@@ -73,9 +73,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: Colors.white,
@@ -96,9 +97,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                               Row(
                                 children: [
                                   const Text(
@@ -129,10 +131,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: AppColors.textGray.withValues(alpha: 0.8),
                                 ),
                               ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
+                    ),
                       // Notification icon dengan badge unread count
                       ValueListenableBuilder<List<FcmNotification>>(
                         valueListenable: FcmService.instance.notifications,
