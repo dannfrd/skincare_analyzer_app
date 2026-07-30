@@ -132,14 +132,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
           date: e['created_at'] != null
               ? _formatDate(e['created_at'].toString())
               : 'Tanggal tidak diketahui',
-<<<<<<< HEAD
-          summary: _str(analysis['summary']) ??
-              'Summary analysis not available.',
-          recommendation: _str(analysis['recommendation']) ??
-              'No additional recommendations.',
-        );
-      }).toList();
-=======
           summary: summaryText,
           recommendation: recText,
           localImagePath: imgPath,
@@ -148,7 +140,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
           unknownCount: unknown,
         ));
       }
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
 
       if (mounted) {
         setState(() {
@@ -604,11 +595,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           color: AppColors.textDark,
         ),
         decoration: InputDecoration(
-<<<<<<< HEAD
-          hintText: 'Search product brand or category...',
-=======
           hintText: 'Search brand name or product category...',
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
           hintStyle: TextStyle(
             color: Colors.grey.shade400,
             fontSize: 13.5,
@@ -702,60 +689,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-<<<<<<< HEAD
-                        // Brand name (judul utama)
-                        Text(
-                          item.productBrand,
-                          style: const TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                            height: 1.2,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 5),
-                        // Category badge
-                        if (item.productCategory.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: color.withValues(alpha: 0.25)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(icon, size: 10, color: color),
-                                const SizedBox(width: 4),
-                                Text(
-                                  item.productCategory,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: color,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Text(
-                            'No category selected',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade400,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        const SizedBox(height: 6),
-                        // Date
-=======
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -1145,29 +1078,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
             ),
-<<<<<<< HEAD
-            child: const Icon(Icons.history,
-                size: 40, color: AppColors.primaryGreenDark),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Belum ada scan',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isNotEmpty
-                ? 'No results for "$_searchQuery"'
-                : 'Scan your first skincare product!',
-            style:
-                const TextStyle(fontSize: 14, color: AppColors.textGray),
-            textAlign: TextAlign.center,
-          ),
-        ],
-=======
             const SizedBox(height: 24),
             Text(
               _searchQuery.isNotEmpty
@@ -1219,7 +1129,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
           ],
         ),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       ),
     );
   }

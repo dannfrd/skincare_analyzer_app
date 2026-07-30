@@ -190,12 +190,10 @@ class HomeScreen extends StatelessWidget {
                         colors: [
                           AppColors.surfaceGreen,
                           const Color(0xFFD3F1DC).withValues(alpha: 0.9),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-<<<<<<< HEAD
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: AppColors.primaryGreen.withValues(alpha: 0.35),
@@ -206,7 +204,6 @@ class HomeScreen extends StatelessWidget {
                           color: AppColors.primaryGreen.withValues(alpha: 0.12),
                           blurRadius: 16,
                           offset: const Offset(0, 5),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                         ),
                       ],
                     ),
@@ -259,11 +256,7 @@ class HomeScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-<<<<<<< HEAD
-                              'Analyze ingredients instantly\nto discover what works best for your skin.',
-=======
                               'Helping you understand your skin better every day.',
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                               style: TextStyle(
                                 fontSize: 13.5,
                                 color: AppColors.textGray.withValues(alpha: 0.95),
@@ -272,66 +265,6 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-<<<<<<< HEAD
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Discover More Section
-                Text(
-                  'Discover More',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDiscoverCard(
-                        icon: Icons.menu_book,
-                        title: 'Ingredient\nDatabase',
-                        subtitle: 'Search 100+ items',
-                        onTap: () {
-                          Navigator.pushNamed(context, '/ingredients');
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDiscoverCard(
-                        icon: Icons.lightbulb_outline,
-                        title: 'Skincare\nTips',
-                        subtitle: 'For Healthier Skin',
-                        onTap: () {
-                          Navigator.pushNamed(context, '/tips');
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Scan History Banner Widget
-                GestureDetector(
-                  onTap: onNavigateToHistory,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardLight,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-=======
                         Positioned(
                           right: -10,
                           bottom: -15,
@@ -340,7 +273,6 @@ class HomeScreen extends StatelessWidget {
                             size: 90,
                             color: AppColors.primaryGreen.withValues(alpha: 0.18),
                           ),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                         ),
                       ],
                     ),
@@ -659,21 +591,6 @@ class HomeScreen extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-<<<<<<< HEAD
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceGreen,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: AppColors.primaryGreenDark),
-=======
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -704,22 +621,15 @@ class HomeScreen extends StatelessWidget {
                       color: AppColors.textGray.withValues(alpha: 0.4),
                     ),
                   ],
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                 ),
                 const SizedBox(height: 16),
                 Text(
                   title,
                   style: const TextStyle(
-<<<<<<< HEAD
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-=======
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textDark,
                     height: 1.25,
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                   ),
                 ),
                 const SizedBox(height: 4),
