@@ -179,30 +179,6 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-<<<<<<< HEAD
-                  child: Stack(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Welcome to SkinCare AI\nAnalyzer',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                              height: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Helping you understand your skin better every day.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textGray,
-                            ),
-                          ),
-=======
                   const SizedBox(height: 24),
 
                   // ── Welcome Banner ───────────────────────────────────
@@ -220,14 +196,6 @@ class HomeScreen extends StatelessWidget {
                         end: Alignment.bottomRight,
                       ),
 <<<<<<< HEAD
-                      Positioned(
-                        right: -10,
-                        bottom: -10,
-                        child: Icon(
-                          Icons.spa,
-                          size: 80,
-                          color: AppColors.primaryGreen.withOpacity(0.2),
-=======
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: AppColors.primaryGreen.withValues(alpha: 0.35),

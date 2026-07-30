@@ -40,7 +40,8 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Future<void> _resolveAndPersistImage() async {
     final prefs = await SharedPreferences.getInstance();
-    final analysisId = _toInt(analysisData['analysis_id']) ?? _toInt(analysisData['id']);
+    final analysisId =
+        _toInt(analysisData['analysis_id']) ?? _toInt(analysisData['id']);
 
     File? resolvedFile = _activeImageFile;
 
@@ -69,7 +70,9 @@ class _ResultScreenState extends State<ResultScreen> {
         } else {
           try {
             final docDir = await getApplicationDocumentsDirectory();
-            final defaultFile = File('${docDir.path}/scan_images/scan_$analysisId.jpg');
+            final defaultFile = File(
+              '${docDir.path}/scan_images/scan_$analysisId.jpg',
+            );
             if (defaultFile.existsSync()) {
               resolvedFile = defaultFile;
             }
@@ -79,7 +82,9 @@ class _ResultScreenState extends State<ResultScreen> {
 
       // 3. Cari dari data JSON (local_image_path atau image_path)
       if (resolvedFile == null) {
-        final pathStr = _asString(analysisData['local_image_path']) ?? _asString(analysisData['image_path']);
+        final pathStr =
+            _asString(analysisData['local_image_path']) ??
+            _asString(analysisData['image_path']);
         if (pathStr != null && File(pathStr).existsSync()) {
           resolvedFile = File(pathStr);
         }
@@ -87,7 +92,9 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     // 4. Periksa image URL network
-    final urlStr = _asString(analysisData['image_url']) ?? _asString(analysisData['imageUrl']);
+    final urlStr =
+        _asString(analysisData['image_url']) ??
+        _asString(analysisData['imageUrl']);
 
     if (mounted) {
       setState(() {
@@ -100,7 +107,7 @@ class _ResultScreenState extends State<ResultScreen> {
   Future<void> _loadRecommendations() async {
     final rawMatched = widget.analysisData['matched_ingredients'];
     List<String> names = [];
-    
+
     if (rawMatched is List) {
       if (rawMatched.isNotEmpty && rawMatched.first is String) {
         names = rawMatched.map((e) => e.toString().trim()).toList();
@@ -145,19 +152,17 @@ class _ResultScreenState extends State<ResultScreen> {
     final warningCount =
         _toInt(expertAnalysis['warnings_found']) ?? flags.length;
 
-    final summary =
-<<<<<<< HEAD
-        _asString(analysisData['summary']) ?? 'Summary analysis not available.';
-    final recommendation =
-        _asString(analysisData['recommendation']) ?? 'No additional recommendations.';
-=======
-        _cleanMarkdownSymbols(_asString(analysisData['summary']) ?? 'Summary analysis not available.');
-    final recommendation =
-        _cleanMarkdownSymbols(_asString(analysisData['recommendation']) ?? 'No additional recommendations.');
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
+    final summary = _cleanMarkdownSymbols(
+      _asString(analysisData['summary']) ?? 'Summary analysis not available.',
+    );
+    final recommendation = _cleanMarkdownSymbols(
+      _asString(analysisData['recommendation']) ??
+          'No additional recommendations.',
+    );
 
     final aiText = _resolveAiText(aiAnalysis, recommendation);
-    final modelUsed = _asString(aiAnalysis['model_used']) ??
+    final modelUsed =
+        _asString(aiAnalysis['model_used']) ??
         _asString(aiAnalysis['model']) ??
         '-';
     final modelsTried = _asStringList(aiAnalysis['models_tried']);
@@ -241,8 +246,12 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildImageHeader() {
-    final hasLocalImage = _activeImageFile != null && _activeImageFile!.existsSync();
-    final hasNetworkImage = !hasLocalImage && _networkImageUrl != null && _networkImageUrl!.startsWith('http');
+    final hasLocalImage =
+        _activeImageFile != null && _activeImageFile!.existsSync();
+    final hasNetworkImage =
+        !hasLocalImage &&
+        _networkImageUrl != null &&
+        _networkImageUrl!.startsWith('http');
     final hasAnyImage = hasLocalImage || hasNetworkImage;
 
     return GestureDetector(
@@ -263,15 +272,15 @@ class _ResultScreenState extends State<ResultScreen> {
               child: hasLocalImage
                   ? Image.file(_activeImageFile!, fit: BoxFit.cover)
                   : (hasNetworkImage
-                      ? Image.network(_networkImageUrl!, fit: BoxFit.cover)
-                      : Container(
-                          color: const Color(0xFFE7EFE9),
-                          child: const Icon(
-                            Icons.spa,
-                            size: 62,
-                            color: AppColors.primaryGreenDark,
-                          ),
-                        )),
+                        ? Image.network(_networkImageUrl!, fit: BoxFit.cover)
+                        : Container(
+                            color: const Color(0xFFE7EFE9),
+                            child: const Icon(
+                              Icons.spa,
+                              size: 62,
+                              color: AppColors.primaryGreenDark,
+                            ),
+                          )),
             ),
             Positioned.fill(
               child: Container(
@@ -290,11 +299,16 @@ class _ResultScreenState extends State<ResultScreen> {
                 top: 10,
                 right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -320,7 +334,10 @@ class _ResultScreenState extends State<ResultScreen> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primaryGreenDark.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(6),
@@ -369,16 +386,10 @@ class _ResultScreenState extends State<ResultScreen> {
                 minScale: 0.5,
                 maxScale: 5.0,
                 child: file != null && file.existsSync()
-                    ? Image.file(
-                        file,
-                        fit: BoxFit.contain,
-                      )
+                    ? Image.file(file, fit: BoxFit.contain)
                     : (url != null && url.startsWith('http')
-                        ? Image.network(
-                            url,
-                            fit: BoxFit.contain,
-                          )
-                        : const SizedBox()),
+                          ? Image.network(url, fit: BoxFit.contain)
+                          : const SizedBox()),
               ),
             ),
             // Top Bar with Close Button
@@ -390,7 +401,10 @@ class _ResultScreenState extends State<ResultScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(20),
@@ -419,7 +433,11 @@ class _ResultScreenState extends State<ResultScreen> {
                         color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.close, color: Colors.white, size: 22),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ],
@@ -467,11 +485,7 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
           const SizedBox(height: 3),
           const Text(
-<<<<<<< HEAD
-            'Based on ingredient matching + AI analysis',
-=======
             'Based on ingredient matching & safety data',
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
             style: TextStyle(fontSize: 12.5, color: AppColors.textGray),
           ),
           const SizedBox(height: 14),
@@ -662,12 +676,24 @@ class _ResultScreenState extends State<ResultScreen> {
 
     final details = <_DetailItem>[];
     if (datasetDescription != null && datasetDescription.isNotEmpty) {
-      details.add(_DetailItem('Deskripsi', _cleanMarkdownSymbols(_clip(datasetDescription, maxLen: 160))));
+      details.add(
+        _DetailItem(
+          'Deskripsi',
+          _cleanMarkdownSymbols(_clip(datasetDescription, maxLen: 160)),
+        ),
+      );
     } else if (description != null && description.isNotEmpty) {
-      details.add(_DetailItem('Deskripsi', _cleanMarkdownSymbols(_clip(description, maxLen: 160))));
+      details.add(
+        _DetailItem(
+          'Deskripsi',
+          _cleanMarkdownSymbols(_clip(description, maxLen: 160)),
+        ),
+      );
     }
     if (datasetWarnings != null && datasetWarnings.isNotEmpty) {
-      details.add(_DetailItem('Peringatan', _cleanMarkdownSymbols(datasetWarnings)));
+      details.add(
+        _DetailItem('Peringatan', _cleanMarkdownSymbols(datasetWarnings)),
+      );
     }
     if (datasetOrigin != null && datasetOrigin.isNotEmpty) {
       details.add(_DetailItem('Asal', datasetOrigin));
@@ -732,9 +758,13 @@ class _ResultScreenState extends State<ResultScreen> {
                         .map(
                           (f) => Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 3),
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -798,8 +828,9 @@ class _ResultScreenState extends State<ResultScreen> {
       child: Column(
         children: flags.map((flag) {
           final ingredient = _asString(flag['ingredient']) ?? '-';
-          final message =
-              _cleanMarkdownSymbols(_asString(flag['message']) ?? 'Detail warning tidak tersedia.');
+          final message = _cleanMarkdownSymbols(
+            _asString(flag['message']) ?? 'Detail warning tidak tersedia.',
+          );
 
           return Container(
             margin: const EdgeInsets.only(bottom: 9),
@@ -907,25 +938,14 @@ class _ResultScreenState extends State<ResultScreen> {
     final sections = _parseMarkdownSections(aiText);
 
     return _buildSectionCard(
-<<<<<<< HEAD
-      title: 'Insight AI',
-      icon: Icons.auto_awesome_rounded,
-=======
       title: 'Ingredient Insights',
       icon: Icons.lightbulb_outline_rounded,
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           if (sections.isEmpty)
-<<<<<<< HEAD
             const Text(
-              'AI Insight not available.',
-=======
-              const Text(
               'No insights available.',
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
               style: TextStyle(fontSize: 14, color: AppColors.textGray),
             )
           else
@@ -938,15 +958,14 @@ class _ResultScreenState extends State<ResultScreen> {
               childrenPadding: EdgeInsets.zero,
               title: const Row(
                 children: [
-                  Icon(Icons.unfold_more_rounded,
-                      size: 15, color: AppColors.primaryGreenDark),
+                  Icon(
+                    Icons.unfold_more_rounded,
+                    size: 15,
+                    color: AppColors.primaryGreenDark,
+                  ),
                   SizedBox(width: 6),
                   Text(
-<<<<<<< HEAD
-                    'View Full AI Analysis',
-=======
                     'View Full Analysis',
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -963,7 +982,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     color: const Color(0xFFF6FAF6),
                     borderRadius: BorderRadius.circular(11),
                     border: Border.all(
-                        color: AppColors.primaryGreenDark.withValues(alpha: 0.15)),
+                      color: AppColors.primaryGreenDark.withValues(alpha: 0.15),
+                    ),
                   ),
                   child: Text(
                     _cleanMarkdownSymbols(aiText),
@@ -1021,21 +1041,32 @@ class _ResultScreenState extends State<ResultScreen> {
       // 4) Or is wrapped in bold asterisks (**...**) on a short line (< 65 chars) without ending in a period.
       final isNumbered = RegExp(r'^\d+[).]\s+').hasMatch(trimmed);
       final isHashHeading = trimmed.startsWith('#');
-      final isKeywordHeading = RegExp(r'^(🌸|🎯|🤝|💖|✨|💡|📌|🔥|\*\*🌸|\*\*🎯|\*\*🤝|\*\*💖|\*\*✨|\*\*💡|\*\*📌|\*\*🔥|Karakter|Kecocokan|Harmoni|Catatan|Kesimpulan|Peringatan|Insight)', caseSensitive: false).hasMatch(trimmed);
-      final isBoldLine = trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length < 65 && !trimmed.endsWith('.');
+      final isKeywordHeading = RegExp(
+        r'^(🌸|🎯|🤝|💖|✨|💡|📌|🔥|\*\*🌸|\*\*🎯|\*\*🤝|\*\*💖|\*\*✨|\*\*💡|\*\*📌|\*\*🔥|Karakter|Kecocokan|Harmoni|Catatan|Kesimpulan|Peringatan|Insight)',
+        caseSensitive: false,
+      ).hasMatch(trimmed);
+      final isBoldLine =
+          trimmed.startsWith('**') &&
+          trimmed.endsWith('**') &&
+          trimmed.length < 65 &&
+          !trimmed.endsWith('.');
 
       if (isNumbered || isHashHeading || isKeywordHeading || isBoldLine) {
         // Save previous section if it has content
         if (currentHeading != null || currentBodyLines.isNotEmpty) {
-          sections.add(_MarkdownSection(
-            heading: currentHeading,
-            body: currentBodyLines.join('\n').trim(),
-          ));
+          sections.add(
+            _MarkdownSection(
+              heading: currentHeading,
+              body: currentBodyLines.join('\n').trim(),
+            ),
+          );
           currentBodyLines.clear();
         }
         // Clean heading text from markdown symbols and numbers
         var cleanHeading = _cleanMarkdownSymbols(trimmed);
-        cleanHeading = cleanHeading.replaceFirst(RegExp(r'^\d+[).]\s*'), '').trim();
+        cleanHeading = cleanHeading
+            .replaceFirst(RegExp(r'^\d+[).]\s*'), '')
+            .trim();
         currentHeading = cleanHeading;
       } else {
         currentBodyLines.add(line);
@@ -1044,14 +1075,21 @@ class _ResultScreenState extends State<ResultScreen> {
 
     // Add final section
     if (currentHeading != null || currentBodyLines.isNotEmpty) {
-      sections.add(_MarkdownSection(
-        heading: currentHeading,
-        body: currentBodyLines.join('\n').trim(),
-      ));
+      sections.add(
+        _MarkdownSection(
+          heading: currentHeading,
+          body: currentBodyLines.join('\n').trim(),
+        ),
+      );
     }
 
     if (sections.isEmpty) {
-      return [_MarkdownSection(heading: null, body: _cleanMarkdownSymbols(normalized))];
+      return [
+        _MarkdownSection(
+          heading: null,
+          body: _cleanMarkdownSymbols(normalized),
+        ),
+      ];
     }
     return sections;
   }
@@ -1086,56 +1124,60 @@ class _ResultScreenState extends State<ResultScreen> {
               .map((line) => line.trim())
               .where((line) => line.isNotEmpty)
               .map((line) {
-            final isBullet = line.startsWith('-') ||
-                line.startsWith('*') ||
-                line.startsWith('•');
-            final displayText =
-                isBullet ? line.replaceFirst(RegExp(r'^[-*•]\s*'), '') : line;
-            final clean = _cleanMarkdownSymbols(displayText);
+                final isBullet =
+                    line.startsWith('-') ||
+                    line.startsWith('*') ||
+                    line.startsWith('•');
+                final displayText = isBullet
+                    ? line.replaceFirst(RegExp(r'^[-*•]\s*'), '')
+                    : line;
+                final clean = _cleanMarkdownSymbols(displayText);
 
-            if (isBullet) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 7),
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreenDark.withValues(alpha: 0.7),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        clean,
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          color: AppColors.textDark,
-                          height: 1.5,
+                if (isBullet) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 5),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(top: 7),
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreenDark.withValues(
+                              alpha: 0.7,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            clean,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              color: AppColors.textDark,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }
+                  );
+                }
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                clean,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  color: AppColors.textDark,
-                  height: 1.55,
-                ),
-              ),
-            );
-          }),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    clean,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      color: AppColors.textDark,
+                      height: 1.55,
+                    ),
+                  ),
+                );
+              }),
         ],
       ),
     );
@@ -1174,7 +1216,11 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
             if (!_isLoadingRecs && _recommendations.length > 2) ...[
               const Spacer(),
-              Icon(Icons.swipe_left_rounded, size: 15, color: AppColors.textGray.withValues(alpha: 0.7)),
+              Icon(
+                Icons.swipe_left_rounded,
+                size: 15,
+                color: AppColors.textGray.withValues(alpha: 0.7),
+              ),
               const SizedBox(width: 4),
               Text(
                 'Swipe',
@@ -1202,16 +1248,20 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.search_off_rounded,
-                    color: Colors.grey.shade400, size: 20),
+                Icon(
+                  Icons.search_off_rounded,
+                  color: Colors.grey.shade400,
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
                     'No similar products found in dataset.',
                     style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textGray,
-                        height: 1.4),
+                      fontSize: 13,
+                      color: AppColors.textGray,
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],
@@ -1233,11 +1283,7 @@ class _ResultScreenState extends State<ResultScreen> {
         const SizedBox(height: 4),
         Center(
           child: Text(
-<<<<<<< HEAD
-            '💡 Products based on active ingredients.',
-=======
             'Products based on matching active ingredients.',
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 10.5,
@@ -1271,8 +1317,9 @@ class _ResultScreenState extends State<ResultScreen> {
                 height: 64,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(15),
+                  ),
                 ),
               ),
               Padding(
@@ -1281,19 +1328,22 @@ class _ResultScreenState extends State<ResultScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                        height: 9,
-                        width: 50,
-                        color: Colors.grey.shade200),
+                      height: 9,
+                      width: 50,
+                      color: Colors.grey.shade200,
+                    ),
                     const SizedBox(height: 6),
                     Container(
-                        height: 11,
-                        width: 130,
-                        color: Colors.grey.shade200),
+                      height: 11,
+                      width: 130,
+                      color: Colors.grey.shade200,
+                    ),
                     const SizedBox(height: 4),
                     Container(
-                        height: 11,
-                        width: 90,
-                        color: Colors.grey.shade200),
+                      height: 11,
+                      width: 90,
+                      color: Colors.grey.shade200,
+                    ),
                   ],
                 ),
               ),
@@ -1304,8 +1354,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Widget _buildRecommendationCard(
-      Map<String, dynamic> product, int index) {
+  Widget _buildRecommendationCard(Map<String, dynamic> product, int index) {
     final name = _asString(product['name']) ?? 'Unknown Product';
     final pct = product['similarity_pct'] is int
         ? product['similarity_pct'] as int
@@ -1345,22 +1394,27 @@ class _ResultScreenState extends State<ResultScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(15)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(15),
+                ),
               ),
               child: Stack(
                 children: [
                   Center(
-                    child: Icon(icon,
-                        size: 30,
-                        color: Colors.white.withValues(alpha: 0.9)),
+                    child: Icon(
+                      icon,
+                      size: 30,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
                   ),
                   Positioned(
                     top: 8,
                     right: 9,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 3),
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.28),
                         borderRadius: BorderRadius.circular(20),
@@ -1430,7 +1484,8 @@ class _ResultScreenState extends State<ResultScreen> {
         ? product['similarity_pct'] as int
         : int.tryParse(product['similarity_pct']?.toString() ?? '') ?? 0;
     final matched = _asStringList(product['matched_ingredients']);
-    final matchReason = _asString(product['match_reason']) ?? 'Similar ingredients';
+    final matchReason =
+        _asString(product['match_reason']) ?? 'Similar ingredients';
     final url = _asString(product['url']) ?? '';
     final tags = _asString(product['category_tags']) ?? '';
 
@@ -1511,7 +1566,10 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: color,
                         borderRadius: BorderRadius.circular(12),
@@ -1579,7 +1637,10 @@ class _ResultScreenState extends State<ResultScreen> {
                             maxWidth: MediaQuery.of(context).size.width - 60,
                           ),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(20),
@@ -1619,9 +1680,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 )
               else
                 ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 180,
-                  ),
+                  constraints: const BoxConstraints(maxHeight: 180),
                   child: SizedBox(
                     width: double.infinity,
                     child: SingleChildScrollView(
@@ -1632,14 +1691,20 @@ class _ResultScreenState extends State<ResultScreen> {
                             .map(
                               (k) => ConstrainedBox(
                                 constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.of(context).size.width - 60,
+                                  maxWidth:
+                                      MediaQuery.of(context).size.width - 60,
                                 ),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: color.withValues(alpha: 0.08),
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: color.withValues(alpha: 0.2)),
+                                    border: Border.all(
+                                      color: color.withValues(alpha: 0.2),
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -1682,10 +1747,17 @@ class _ResultScreenState extends State<ResultScreen> {
                         ),
                         side: BorderSide(color: Colors.grey.shade300),
                       ),
-                      icon: const Icon(Icons.close, color: AppColors.textDark, size: 18),
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.textDark,
+                        size: 18,
+                      ),
                       label: const Text(
                         'Close',
-                        style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -1696,7 +1768,10 @@ class _ResultScreenState extends State<ResultScreen> {
                         onPressed: () async {
                           final uri = Uri.tryParse(url);
                           if (uri != null && await canLaunchUrl(uri)) {
-                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -1708,7 +1783,10 @@ class _ResultScreenState extends State<ResultScreen> {
                           ),
                           elevation: 0,
                         ),
-                        icon: const Icon(Icons.open_in_browser_rounded, size: 18),
+                        icon: const Icon(
+                          Icons.open_in_browser_rounded,
+                          size: 18,
+                        ),
                         label: const Text(
                           'See Product',
                           style: TextStyle(fontWeight: FontWeight.bold),
@@ -1734,7 +1812,9 @@ class _ResultScreenState extends State<ResultScreen> {
     if (n.contains('serum') || n.contains('essence') || n.contains('ampoule')) {
       return (const Color(0xFF9B59B6), Icons.science_rounded);
     }
-    if (n.contains('moisturizer') || n.contains('cream') || n.contains('lotion')) {
+    if (n.contains('moisturizer') ||
+        n.contains('cream') ||
+        n.contains('lotion')) {
       return (const Color(0xFF16A085), Icons.water_drop_rounded);
     }
     if (n.contains('toner') || n.contains('mist')) {
@@ -1749,8 +1829,12 @@ class _ResultScreenState extends State<ResultScreen> {
     if (n.contains('exfoliat') || n.contains('peeling') || n.contains('peel')) {
       return (const Color(0xFFE74C3C), Icons.auto_fix_high_rounded);
     }
-    if (n.contains('eye')) { return (const Color(0xFF8E44AD), Icons.remove_red_eye_rounded); }
-    if (n.contains('lip')) { return (const Color(0xFFE91E7A), Icons.face_retouching_natural_rounded); }
+    if (n.contains('eye')) {
+      return (const Color(0xFF8E44AD), Icons.remove_red_eye_rounded);
+    }
+    if (n.contains('lip')) {
+      return (const Color(0xFFE91E7A), Icons.face_retouching_natural_rounded);
+    }
     if (n.contains('mask') || n.contains('sheet')) {
       return (const Color(0xFF1ABC9C), Icons.masks_rounded);
     }
@@ -1759,8 +1843,6 @@ class _ResultScreenState extends State<ResultScreen> {
     }
     return (AppColors.primaryGreenDark, Icons.spa_rounded);
   }
-
-
 
   Widget _buildBottomBar(BuildContext context) {
     return Container(
@@ -1841,7 +1923,9 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     setState(() => _isSaving = true);
-    if (_activeImageFile != null && _activeImageFile!.existsSync() && analysisId > 0) {
+    if (_activeImageFile != null &&
+        _activeImageFile!.existsSync() &&
+        analysisId > 0) {
       try {
         final docDir = await getApplicationDocumentsDirectory();
         final imgDir = Directory('${docDir.path}/scan_images');
@@ -1890,7 +1974,7 @@ class _ResultScreenState extends State<ResultScreen> {
   static List<Map<String, dynamic>> _asMapList(dynamic value) {
     if (value is! List) return [];
     return List<Map<String, dynamic>>.from(
-      value.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+      value.whereType<Map>().map((m) => Map<String, dynamic>.from(m)),
     );
   }
 
@@ -1940,8 +2024,9 @@ class _ResultScreenState extends State<ResultScreen> {
       rawText = modelOutput;
     } else {
       final text = _asString(aiAnalysis['text']);
-      rawText =
-          (text != null && text.isNotEmpty) ? text : fallbackRecommendation;
+      rawText = (text != null && text.isNotEmpty)
+          ? text
+          : fallbackRecommendation;
     }
     return rawText
         .replaceAll(RegExp(r'`'), '')

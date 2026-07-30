@@ -20,10 +20,7 @@ import 'screens/scan_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/skincare_tips_screen.dart';
 import 'screens/tip_detail_screen.dart';
-<<<<<<< HEAD
-=======
 import 'screens/tutorial_screen.dart';
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
 import 'screens/ingredient_database_screen.dart';
 import 'services/api_service.dart';
 import 'services/fcm_service.dart';
@@ -40,13 +37,13 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  
+
   // Print app configuration for debugging
   AppConfig.printConfig();
-  
+
   // Print network diagnostics
   await ApiService.printDiagnostics();
-  
+
   await Firebase.initializeApp();
 
   // Daftarkan background FCM handler (wajib sebelum runApp)
@@ -114,24 +111,6 @@ class SkincareAnalyzerApp extends StatelessWidget {
         useMaterial3: true,
       ),
       initialRoute: '/',
-<<<<<<< HEAD
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/permissions': (context) => const PermissionScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/main': (context) => const MainNavigation(),
-        '/scan': (context) => const ScanScreen(),
-        '/notifications': (context) => const NotificationScreen(),
-        '/connection-test': (context) => const ConnectionTestScreen(),
-        '/edit-profile': (context) => const EditProfileScreen(),
-        '/tips': (context) => const SkincareTipsScreen(),
-        '/tip-detail': (context) => const TipDetailScreen(),
-        '/ingredients': (context) => const IngredientDatabaseScreen(),
-        // Progress and Results typically get pushed with arguments rather than simple routes
-      },
-=======
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       onGenerateRoute: (settings) {
         WidgetBuilder? builder;
         switch (settings.name) {
@@ -191,10 +170,7 @@ class SkincareAnalyzerApp extends StatelessWidget {
         }
 
         if (builder != null) {
-          return SmoothPageRoute(
-            builder: builder,
-            settings: settings,
-          );
+          return SmoothPageRoute(builder: builder, settings: settings);
         }
         return null;
       },

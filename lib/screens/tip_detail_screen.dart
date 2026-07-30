@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
-=======
 import 'package:flutter/services.dart';
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/skincare_tip.dart';
 
@@ -13,142 +10,6 @@ class TipDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tip = ModalRoute.of(context)!.settings.arguments as SkincareTip;
 
-<<<<<<< HEAD
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // Premium Sliver App Bar with header image
-          SliverAppBar(
-            expandedHeight: 260,
-            pinned: true,
-            stretch: true,
-            backgroundColor: AppColors.primaryGreenDark,
-            leading: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CircleAvatar(
-                backgroundColor: Colors.black.withOpacity(0.4),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              stretchModes: const [
-                StretchMode.zoomBackground,
-                StretchMode.blurBackground,
-              ],
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    tip.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: AppColors.surfaceGreen,
-                      child: const Icon(Icons.spa, color: AppColors.primaryGreen, size: 64),
-                    ),
-                  ),
-                  // Gradient overlay to darken image slightly at bottom
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.3),
-                          Colors.black.withOpacity(0.0),
-                          Colors.black.withOpacity(0.6),
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Article Content
-          SliverToBoxAdapter(
-            child: Container(
-              color: AppColors.backgroundLight,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Category and Read Time
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceGreen,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            tip.category,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryGreenDark,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.access_time, size: 14, color: AppColors.textGray),
-                            const SizedBox(width: 4),
-                            Text(
-                              tip.readTime,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textGray,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Title
-                    Text(
-                      tip.title,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        height: 1.3,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 8),
-                    
-                    // Subtitle / Intro
-                    Text(
-                      tip.subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                        color: AppColors.textGray.withOpacity(0.9),
-                        height: 1.4,
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
-                    const SizedBox(height: 20),
-                    
-                    // Content Sections
-                    ...tip.sections.map((section) => _buildSection(section)),
-                    
-                    const SizedBox(height: 40),
-=======
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -161,7 +22,6 @@ class TipDetailScreen extends StatelessWidget {
         body: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // Premium Sliver App Bar with header image
             SliverAppBar(
               expandedHeight: 280,
               pinned: true,
@@ -172,7 +32,11 @@ class TipDetailScreen extends StatelessWidget {
                 child: CircleAvatar(
                   backgroundColor: Colors.black.withValues(alpha: 0.45),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -190,10 +54,13 @@ class TipDetailScreen extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         color: AppColors.surfaceGreen,
-                        child: const Icon(Icons.spa_rounded, color: AppColors.primaryGreenDark, size: 64),
+                        child: const Icon(
+                          Icons.spa_rounded,
+                          color: AppColors.primaryGreenDark,
+                          size: 64,
+                        ),
                       ),
                     ),
-                    // Gradient overlay to darken image slightly at bottom
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -208,17 +75,10 @@ class TipDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                   ],
                 ),
               ),
             ),
-<<<<<<< HEAD
-          ),
-        ],
-=======
-
-            // Article Content
             SliverToBoxAdapter(
               child: Container(
                 color: AppColors.backgroundLight,
@@ -227,12 +87,14 @@ class TipDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Category and Read Time
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.surfaceGreen,
                               borderRadius: BorderRadius.circular(10),
@@ -248,13 +110,21 @@ class TipDetailScreen extends StatelessWidget {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.access_time_rounded, size: 15, color: AppColors.textGray.withValues(alpha: 0.85)),
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 15,
+                                color: AppColors.textGray.withValues(
+                                  alpha: 0.85,
+                                ),
+                              ),
                               const SizedBox(width: 5),
                               Text(
                                 tip.readTime,
                                 style: TextStyle(
                                   fontSize: 12.5,
-                                  color: AppColors.textGray.withValues(alpha: 0.85),
+                                  color: AppColors.textGray.withValues(
+                                    alpha: 0.85,
+                                  ),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -262,10 +132,7 @@ class TipDetailScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      
                       const SizedBox(height: 18),
-                      
-                      // Title
                       Text(
                         tip.title,
                         style: const TextStyle(
@@ -276,10 +143,7 @@ class TipDetailScreen extends StatelessWidget {
                           letterSpacing: -0.3,
                         ),
                       ),
-                      
                       const SizedBox(height: 10),
-                      
-                      // Subtitle / Intro
                       Text(
                         tip.subtitle,
                         style: TextStyle(
@@ -289,14 +153,10 @@ class TipDetailScreen extends StatelessWidget {
                           height: 1.45,
                         ),
                       ),
-                      
                       const SizedBox(height: 20),
                       const Divider(height: 1, color: Color(0xFFE2E8F0)),
                       const SizedBox(height: 24),
-                      
-                      // Content Sections
                       ...tip.sections.map((section) => _buildSection(section)),
-                      
                       const SizedBox(height: 48),
                     ],
                   ),
@@ -305,7 +165,6 @@ class TipDetailScreen extends StatelessWidget {
             ),
           ],
         ),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       ),
     );
   }
@@ -313,31 +172,13 @@ class TipDetailScreen extends StatelessWidget {
   Widget _buildSection(SkincareTipSection section) {
     if (section.isHighlight) {
       return Padding(
-<<<<<<< HEAD
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceGreen,
-            borderRadius: BorderRadius.circular(12),
-            border: const Border(
-              left: BorderSide(
-                color: AppColors.primaryGreenDark,
-                width: 4,
-              ),
-            ),
-          ),
-          padding: const EdgeInsets.all(16.0),
-=======
         padding: const EdgeInsets.symmetric(vertical: 18.0),
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.surfaceGreen,
             borderRadius: BorderRadius.circular(16),
             border: const Border(
-              left: BorderSide(
-                color: AppColors.primaryGreenDark,
-                width: 4.5,
-              ),
+              left: BorderSide(color: AppColors.primaryGreenDark, width: 4.5),
             ),
             boxShadow: [
               BoxShadow(
@@ -348,24 +189,12 @@ class TipDetailScreen extends StatelessWidget {
             ],
           ),
           padding: const EdgeInsets.all(18.0),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   const Icon(
-<<<<<<< HEAD
-                    Icons.tips_and_updates,
-                    color: AppColors.primaryGreenDark,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    section.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-=======
                     Icons.tips_and_updates_rounded,
                     color: AppColors.primaryGreenDark,
                     size: 22,
@@ -375,28 +204,18 @@ class TipDetailScreen extends StatelessWidget {
                     section.title,
                     style: const TextStyle(
                       fontSize: 16,
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                       fontWeight: FontWeight.bold,
                       color: AppColors.primaryGreenDark,
                     ),
                   ),
                 ],
               ),
-<<<<<<< HEAD
-              const SizedBox(height: 8),
-              Text(
-                section.content,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-=======
               const SizedBox(height: 10),
               Text(
                 section.content,
                 style: const TextStyle(
                   fontSize: 14.5,
                   height: 1.55,
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                   color: AppColors.textDark,
                 ),
               ),
@@ -407,22 +226,14 @@ class TipDetailScreen extends StatelessWidget {
     }
 
     return Padding(
-<<<<<<< HEAD
-      padding: const EdgeInsets.only(bottom: 20.0),
-=======
       padding: const EdgeInsets.only(bottom: 24.0),
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             section.title,
             style: const TextStyle(
-<<<<<<< HEAD
-              fontSize: 16,
-=======
               fontSize: 17,
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
               fontWeight: FontWeight.bold,
               color: AppColors.textDark,
             ),
@@ -431,11 +242,7 @@ class TipDetailScreen extends StatelessWidget {
           Text(
             section.content,
             style: const TextStyle(
-<<<<<<< HEAD
-              fontSize: 14,
-=======
               fontSize: 14.5,
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
               height: 1.6,
               color: AppColors.textGray,
             ),

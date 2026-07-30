@@ -14,7 +14,7 @@ import 'user_session.dart';
 import '../models/ingredient_metric.dart';
 
 /// API Service untuk komunikasi dengan backend
-/// 
+///
 /// Backend menggunakan Multi-Dataset RAG untuk analisis:
 /// 1. OCR text di-extract dan di-clean
 /// 2. Ingredient di-match dengan database MySQL
@@ -25,7 +25,7 @@ import '../models/ingredient_metric.dart';
 /// 4. Data dari 3 dataset di-merge menjadi context lengkap
 /// 5. Gemini AI menganalisis dengan context grounding dari 3 sumber
 /// 6. Expert system memberikan safety scoring
-/// 
+///
 /// Semua proses Multi-Dataset RAG terjadi di backend, Flutter hanya perlu:
 /// - Kirim image/text ke backend
 /// - Terima hasil analisis yang sudah ter-context dari 3 dataset
@@ -45,7 +45,7 @@ class ApiService {
   }
 
   /// Analyze image menggunakan OCR + Multi-Dataset RAG + AI
-  /// 
+  ///
   /// Backend akan:
   /// 1. Extract text dari image (OCR)
   /// 2. Clean dan tokenize ingredient
@@ -88,7 +88,11 @@ class ApiService {
         request.fields['product_category'] = category;
       }
 
-      final fileToSend = await _compressImage(imageFile, maxWidth: 1400, quality: 85);
+      final fileToSend = await _compressImage(
+        imageFile,
+        maxWidth: 1400,
+        quality: 85,
+      );
       request.files.add(
         await http.MultipartFile.fromPath('file', fileToSend.path),
       );
@@ -96,9 +100,9 @@ class ApiService {
       var streamedResponse = await request.send().timeout(
         const Duration(seconds: 180),
       );
-      var response = await http.Response.fromStream(streamedResponse).timeout(
-        const Duration(seconds: 180),
-      );
+      var response = await http.Response.fromStream(
+        streamedResponse,
+      ).timeout(const Duration(seconds: 180));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -125,7 +129,7 @@ class ApiService {
   }
 
   /// Analyze text ingredient menggunakan Multi-Dataset RAG + AI
-  /// 
+  ///
   /// Backend akan:
   /// 1. Clean dan tokenize ingredient text
   /// 2. Match dengan database MySQL
@@ -201,19 +205,22 @@ class ApiService {
 
   static Future<List<dynamic>> getHistory() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/history'),
-        headers: UserSession.authHeaders,
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .get(Uri.parse('$baseUrl/history'), headers: UserSession.authHeaders)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is List) return data;
-        if (data is Map && data.containsKey('items')) return data['items'] as List<dynamic>;
-        if (data is Map && data.containsKey('data')) return data['data'] as List<dynamic>;
+        if (data is Map && data.containsKey('items'))
+          return data['items'] as List<dynamic>;
+        if (data is Map && data.containsKey('data'))
+          return data['data'] as List<dynamic>;
         return [];
       } else {
-        throw Exception('Failed to fetch history: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'Failed to fetch history: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       throw Exception('Error fetching history: $e');
@@ -222,11 +229,13 @@ class ApiService {
 
   static Future<bool> saveAnalysisHistory(int analysisId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/history/save'),
-        headers: UserSession.authHeaders,
-        body: jsonEncode({'analysis_id': analysisId}),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/history/save'),
+            headers: UserSession.authHeaders,
+            body: jsonEncode({'analysis_id': analysisId}),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
@@ -239,10 +248,12 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getAnalysisDetail(int analysisId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/analysis/$analysisId'),
-        headers: UserSession.authHeaders,
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/analysis/$analysisId'),
+            headers: UserSession.authHeaders,
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -275,7 +286,9 @@ class ApiService {
   }
 
   /// Upload profile picture to backend
-  static Future<Map<String, dynamic>> uploadProfilePicture(File imageFile) async {
+  static Future<Map<String, dynamic>> uploadProfilePicture(
+    File imageFile,
+  ) async {
     try {
       var request = http.MultipartRequest(
         'POST',
@@ -323,14 +336,17 @@ class ApiService {
       payload['profile_picture'] = profilePicture;
     }
     if (password != null && password.isNotEmpty) payload['password'] = password;
-    if (fcmToken != null && fcmToken.isNotEmpty) payload['fcm_token'] = fcmToken;
+    if (fcmToken != null && fcmToken.isNotEmpty)
+      payload['fcm_token'] = fcmToken;
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/profile/update'),
-        headers: UserSession.authHeaders,
-        body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/profile/update'),
+            headers: UserSession.authHeaders,
+            body: jsonEncode(payload),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -360,9 +376,9 @@ class ApiService {
       if (category != null && category.trim().isNotEmpty) {
         queryParams['category'] = category.trim();
       }
-      final uri = Uri.parse('$baseUrl/recommendations').replace(
-        queryParameters: queryParams,
-      );
+      final uri = Uri.parse(
+        '$baseUrl/recommendations',
+      ).replace(queryParameters: queryParams);
       final response = await http
           .get(uri, headers: UserSession.authHeaders)
           .timeout(const Duration(seconds: 20));
@@ -372,7 +388,7 @@ class ApiService {
         final recs = data['recommendations'];
         if (recs is List) {
           return List<Map<String, dynamic>>.from(
-            recs.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+            recs.whereType<Map>().map((m) => Map<String, dynamic>.from(m)),
           );
         }
       }
@@ -399,7 +415,7 @@ class ApiService {
         final cats = data['categories'];
         if (cats is List) {
           return List<Map<String, dynamic>>.from(
-            cats.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+            cats.whereType<Map>().map((m) => Map<String, dynamic>.from(m)),
           );
         }
       }
@@ -416,42 +432,46 @@ class ApiService {
   static List<Map<String, dynamic>> _fallbackCategories() {
     return const [
       // Pembersih
-      {'id': 'cleanser',          'name': 'Cleanser'},
-      {'id': 'micellar_water',    'name': 'Micellar Water'},
-      {'id': 'cleansing_oil',     'name': 'Cleansing Oil/Balm'},
+      {'id': 'cleanser', 'name': 'Cleanser'},
+      {'id': 'micellar_water', 'name': 'Micellar Water'},
+      {'id': 'cleansing_oil', 'name': 'Cleansing Oil/Balm'},
       // Treatment Dasar
-      {'id': 'toner',             'name': 'Toner'},
-      {'id': 'essence',           'name': 'Essence'},
+      {'id': 'toner', 'name': 'Toner'},
+      {'id': 'essence', 'name': 'Essence'},
       // Treatment Aktif
-      {'id': 'serum',             'name': 'Serum'},
-      {'id': 'ampoule',           'name': 'Ampoule'},
-      {'id': 'spot_treatment',    'name': 'Spot Treatment'},
-      {'id': 'retinol',           'name': 'Retinol'},
+      {'id': 'serum', 'name': 'Serum'},
+      {'id': 'ampoule', 'name': 'Ampoule'},
+      {'id': 'spot_treatment', 'name': 'Spot Treatment'},
+      {'id': 'retinol', 'name': 'Retinol'},
       // Pelembap
-      {'id': 'moisturizer',       'name': 'Moisturizer'},
-      {'id': 'night_cream',       'name': 'Night Cream'},
+      {'id': 'moisturizer', 'name': 'Moisturizer'},
+      {'id': 'night_cream', 'name': 'Night Cream'},
       // Mata & Bibir
-      {'id': 'eye_care',          'name': 'Eye Care'},
-      {'id': 'lip_care',          'name': 'Lip Care'},
+      {'id': 'eye_care', 'name': 'Eye Care'},
+      {'id': 'lip_care', 'name': 'Lip Care'},
       // Pelindung
-      {'id': 'sunscreen',         'name': 'Sunscreen'},
+      {'id': 'sunscreen', 'name': 'Sunscreen'},
       // Perawatan Berkala
-      {'id': 'exfoliator',        'name': 'Exfoliator'},
-      {'id': 'face_mask',         'name': 'Face Mask'},
-      {'id': 'sheet_mask',        'name': 'Sheet Mask'},
-      {'id': 'facial_mist',       'name': 'Facial Mist'},
+      {'id': 'exfoliator', 'name': 'Exfoliator'},
+      {'id': 'face_mask', 'name': 'Face Mask'},
+      {'id': 'sheet_mask', 'name': 'Sheet Mask'},
+      {'id': 'facial_mist', 'name': 'Facial Mist'},
       // Minyak Wajah
-      {'id': 'facial_oil',        'name': 'Facial Oil'},
+      {'id': 'facial_oil', 'name': 'Facial Oil'},
     ];
   }
 
   /// Fetch popular/scanned ingredients metrics from backend
-  static Future<List<IngredientMetric>> getIngredientMetrics({int limit = 500}) async {
+  static Future<List<IngredientMetric>> getIngredientMetrics({
+    int limit = 500,
+  }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/mobile/metrics/ingredients?limit=$limit'),
-        headers: UserSession.authHeaders,
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/mobile/metrics/ingredients?limit=$limit'),
+            headers: UserSession.authHeaders,
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -459,42 +479,46 @@ class ApiService {
         if (decoded is List) {
           list = decoded;
         } else if (decoded is Map<String, dynamic>) {
-          final nestedList = decoded['ingredients'] ?? decoded['data'] ?? decoded['items'];
+          final nestedList =
+              decoded['ingredients'] ?? decoded['data'] ?? decoded['items'];
           if (nestedList is List) {
             list = nestedList;
           }
         }
-        
+
         return list
             .map((json) {
               if (json is Map) {
-<<<<<<< HEAD
-                return IngredientMetric.fromJson(json.map((k, v) => MapEntry(k.toString(), v)));
-=======
-                return IngredientMetric.fromJson(Map<String, dynamic>.from(json));
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
+                return IngredientMetric.fromJson(
+                  Map<String, dynamic>.from(json),
+                );
               }
               return null;
             })
             .whereType<IngredientMetric>()
             .toList();
       } else {
-        throw Exception('Failed to fetch ingredient metrics: ${response.statusCode}');
+        throw Exception(
+          'Failed to fetch ingredient metrics: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Error fetching ingredient metrics: $e');
     }
   }
-<<<<<<< HEAD
-=======
 
   /// Kompresi dan resize gambar di HP sebelum di-upload agar proses upload super cepat (<0.5s)
   /// dan dijalankan di background Isolate via compute() supaya animasi loading UI tidak lag/stutter.
-  static Future<File> _compressImage(File file, {int maxWidth = 1400, int quality = 85}) async {
+  static Future<File> _compressImage(
+    File file, {
+    int maxWidth = 1400,
+    int quality = 85,
+  }) async {
     try {
       if (!await file.exists()) return file;
       final bytes = await file.readAsBytes();
-      if (bytes.length < 250 * 1024) return file; // Jika sudah di bawah 250 KB, langsung kirim
+      if (bytes.length < 250 * 1024)
+        return file; // Jika sudah di bawah 250 KB, langsung kirim
 
       // Jalankan komputasi berat (decode, resize, encode JPEG) di background Isolate CPU agar UI tetap 60 FPS
       final resizedBytes = await compute(_imageCompressionWorker, {
@@ -506,7 +530,9 @@ class ApiService {
       if (resizedBytes == null) return file;
 
       final tempDir = await getTemporaryDirectory();
-      final compressedFile = File('${tempDir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final compressedFile = File(
+        '${tempDir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
       await compressedFile.writeAsBytes(resizedBytes);
       return compressedFile;
     } catch (e) {
@@ -537,6 +563,4 @@ class ApiService {
       return null;
     }
   }
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
 }
-
