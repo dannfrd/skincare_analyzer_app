@@ -51,10 +51,7 @@ dependencies:
   url_launcher: ^6.3.2
   permission_handler: ^12.0.3
   camera: ^0.12.0+1
-<<<<<<< HEAD
-=======
   flutter_paddle_ocr: ^0.0.2
->>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
 
 dev_dependencies:
   flutter_test:
