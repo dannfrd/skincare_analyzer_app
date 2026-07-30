@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Dermify membutuhkan izin akses kamera untuk memindai label dan komposisi bahan pada produk skincare Anda secara langsung.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Dermify membutuhkan izin akses galeri foto untuk memilih gambar label produk yang ingin dianalisis.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dermify membutuhkan izin mikrofon untuk merekam video saat memindai produk.</string>
 </dict>
 </plist>

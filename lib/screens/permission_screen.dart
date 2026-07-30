@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:skincare_analyzer_app/main.dart';
+import 'package:skincare_analyzer_app/services/fcm_service.dart';
 import 'package:skincare_analyzer_app/services/permission_service.dart';
 import 'package:skincare_analyzer_app/services/user_session.dart';
 
@@ -92,6 +93,15 @@ class _PermissionScreenState extends State<PermissionScreen>
     setState(() => _isRequesting = true);
 
     final statuses = await PermissionService.requestAll();
+    
+    // Khusus untuk FCM / Notifikasi, jalankan permission request dari Firebase
+    // setelah permission system di-request.
+    try {
+      await FcmService.instance.requestPermission();
+    } catch (e) {
+      debugPrint('FCM Permission error: $e');
+    }
+
     if (mounted) {
       setState(() {
         _statuses = statuses;
@@ -110,10 +120,18 @@ class _PermissionScreenState extends State<PermissionScreen>
     }
   }
 
-  void _navigateNext() {
-    final route =
-        UserSession.isLoggedIn ? '/main' : '/login';
-    Navigator.pushReplacementNamed(context, route);
+  Future<void> _navigateNext() async {
+    final tutorialSeen = await PermissionService.hasTutorialBeenSeen();
+    if (!mounted) return;
+
+    if (!tutorialSeen) {
+      // First time — show tutorial before proceeding
+      Navigator.pushReplacementNamed(context, '/tutorial');
+    } else {
+      // Returning user — go directly to main or login
+      final route = UserSession.isLoggedIn ? '/main' : '/login';
+      Navigator.pushReplacementNamed(context, route);
+    }
   }
 
   void _showDeniedDialog() {
@@ -127,7 +145,7 @@ class _PermissionScreenState extends State<PermissionScreen>
             Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706)),
             SizedBox(width: 8),
             Text(
-              'Izin Diperlukan',
+              'Permission Required',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
           ],
@@ -179,7 +197,13 @@ class _PermissionScreenState extends State<PermissionScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 48),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 48),
 
                   // ── Header ──────────────────────────────────────────────
                   Center(
@@ -241,9 +265,9 @@ class _PermissionScreenState extends State<PermissionScreen>
                   const SizedBox(height: 36),
 
                   // ── Permission Cards ────────────────────────────────────
-                  Expanded(
-                    child: ListView.separated(
-                      physics: const NeverScrollableScrollPhysics(),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                       itemCount: _permissions.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
@@ -255,7 +279,6 @@ class _PermissionScreenState extends State<PermissionScreen>
                         );
                       },
                     ),
-                  ),
 
                   const SizedBox(height: 12),
 
@@ -287,6 +310,10 @@ class _PermissionScreenState extends State<PermissionScreen>
                   ),
 
                   const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   // ── CTA Button ──────────────────────────────────────────
                   SizedBox(
@@ -439,12 +466,14 @@ class _PermissionCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),

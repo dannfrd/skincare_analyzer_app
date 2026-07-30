@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
+=======
+import 'package:flutter/services.dart';
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skincare_analyzer_app/main.dart';
 import 'package:skincare_analyzer_app/models/ingredient_metric.dart';
@@ -101,7 +105,11 @@ class _IngredientDatabaseScreenState extends State<IngredientDatabaseScreen> {
     }
 
     return Container(
+<<<<<<< HEAD
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+=======
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       decoration: BoxDecoration(
         color: badgeColor,
         borderRadius: BorderRadius.circular(8),
@@ -119,6 +127,7 @@ class _IngredientDatabaseScreenState extends State<IngredientDatabaseScreen> {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
@@ -192,6 +201,96 @@ class _IngredientDatabaseScreenState extends State<IngredientDatabaseScreen> {
               child: _buildMainContent(),
             ),
           ],
+=======
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        appBar: AppBar(
+          title: const Text(
+            'Ingredient Database',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+              fontSize: 19,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: AppColors.textDark),
+              onPressed: _fetchIngredients,
+            ),
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: _fetchIngredients,
+          color: AppColors.primaryGreen,
+          child: Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onTapOutside: (event) => FocusScope.of(context).unfocus(),
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search ingredient...',
+                      hintStyle: const TextStyle(color: AppColors.textGray, fontSize: 14),
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textGray),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, color: AppColors.textGray),
+                              onPressed: () {
+                                _searchController.clear();
+                                _onSearchChanged("");
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Content
+              Expanded(
+                child: _buildMainContent(),
+              ),
+            ],
+          ),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
         ),
       ),
     );
@@ -306,7 +405,12 @@ class _IngredientDatabaseScreenState extends State<IngredientDatabaseScreen> {
     }
 
     return ListView.builder(
+<<<<<<< HEAD
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+=======
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       itemCount: _filteredIngredients.length,
       itemBuilder: (context, index) {
         final ingredient = _filteredIngredients[index];
@@ -326,6 +430,7 @@ class _IngredientDatabaseScreenState extends State<IngredientDatabaseScreen> {
           bgColor = const Color(0xFFFFF3E0);
         }
 
+<<<<<<< HEAD
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           color: AppColors.cardLight,
@@ -398,6 +503,91 @@ class _IngredientDatabaseScreenState extends State<IngredientDatabaseScreen> {
                     color: AppColors.textGray,
                   ),
                 ],
+=======
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.04),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showIngredientDetails(ingredient),
+              borderRadius: BorderRadius.circular(18),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    // Icon
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        itemIcon,
+                        color: itemColor,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ingredient.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            ingredient.function.isNotEmpty 
+                                ? ingredient.function 
+                                : '',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textGray,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Risk Badge
+                    _buildRiskBadge(ingredient.riskLevel),
+                    const SizedBox(width: 8),
+
+                    // Action Arrow
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: AppColors.textGray,
+                    ),
+                  ],
+                ),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
               ),
             ),
           ),
@@ -423,28 +613,45 @@ class _IngredientDetailSheet extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
+<<<<<<< HEAD
       padding: const EdgeInsets.only(top: 8, bottom: 24),
+=======
+      padding: const EdgeInsets.only(top: 10, bottom: 28),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Drag handle
           Container(
+<<<<<<< HEAD
             width: 40,
+=======
+            width: 44,
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
             height: 5,
             decoration: BoxDecoration(
               color: Colors.grey.shade300,
               borderRadius: BorderRadius.circular(10),
             ),
           ),
+<<<<<<< HEAD
           const SizedBox(height: 16),
 
           // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
+=======
+          const SizedBox(height: 18),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 22.0),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
+<<<<<<< HEAD
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -461,6 +668,19 @@ class _IngredientDetailSheet extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: AppColors.textGray),
+=======
+                  child: Text(
+                    ingredient.name,
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: AppColors.textGray),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -475,7 +695,12 @@ class _IngredientDetailSheet extends StatelessWidget {
               maxHeight: MediaQuery.of(context).size.height * 0.6,
             ),
             child: SingleChildScrollView(
+<<<<<<< HEAD
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
+=======
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 22.0),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -491,12 +716,20 @@ class _IngredientDetailSheet extends StatelessWidget {
                   Text(
                     description,
                     style: const TextStyle(
+<<<<<<< HEAD
                       fontSize: 14,
+=======
+                      fontSize: 14.5,
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                       color: AppColors.textDark,
                       height: 1.5,
                     ),
                   ),
+<<<<<<< HEAD
                   const SizedBox(height: 24),
+=======
+                  const SizedBox(height: 28),
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
                 ],
               ),
             ),

@@ -4,7 +4,6 @@ import 'package:skincare_analyzer_app/screens/home_screen.dart';
 import 'package:skincare_analyzer_app/screens/history_screen.dart';
 import 'package:skincare_analyzer_app/screens/profile_screen.dart';
 
-
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -13,24 +12,23 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-
   List<Widget> get _pages => [
-    HomeScreen(
-      onNavigateToHistory: () {
-        setState(() {
-          _currentPageIndex = 1; // History page index
-        });
-      },
-    ),
-    const HistoryScreen(),
-    ProfileScreen(
-      onNavigateToHistory: () {
-        setState(() {
-          _currentPageIndex = 1; // History page index
-        });
-      },
-    ),
-  ];
+        HomeScreen(
+          onNavigateToHistory: () {
+            setState(() {
+              _currentPageIndex = 1; // History page index
+            });
+          },
+        ),
+        const HistoryScreen(),
+        ProfileScreen(
+          onNavigateToHistory: () {
+            setState(() {
+              _currentPageIndex = 1; // History page index
+            });
+          },
+        ),
+      ];
 
   // Map nav bar index to _pages index (skip index 1 which is Scan)
   int _navToPageIndex(int navIndex) {
@@ -63,39 +61,82 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentPageIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _pageToNavIndex(_currentPageIndex),
-        onTap: _onItemTapped,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textGray,
-        backgroundColor: Colors.white,
-        showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        switchInCurve: const Cubic(0.16, 1.0, 0.3, 1.0),
+        switchOutCurve: const Cubic(0.16, 1.0, 0.3, 1.0),
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<int>(_currentPageIndex),
+          child: _pages[_currentPageIndex],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: Colors.black.withValues(alpha: 0.05),
+              width: 1,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.document_scanner_outlined),
-            activeIcon: Icon(Icons.document_scanner),
-            label: 'Scan',
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _pageToNavIndex(_currentPageIndex),
+          onTap: _onItemTapped,
+          selectedItemColor: AppColors.primaryGreenDark,
+          unselectedItemColor: AppColors.textGray.withValues(alpha: 0.8),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          showUnselectedLabels: true,
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            letterSpacing: 0.2,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 11.5,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined, size: 24),
+              activeIcon: Icon(Icons.home_rounded, size: 26),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.document_scanner_outlined, size: 24),
+              activeIcon: Icon(Icons.document_scanner_rounded, size: 26),
+              label: 'Scan',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history_rounded, size: 24),
+              activeIcon: Icon(Icons.history_rounded, size: 26),
+              label: 'History',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline_rounded, size: 24),
+              activeIcon: Icon(Icons.person_rounded, size: 26),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }

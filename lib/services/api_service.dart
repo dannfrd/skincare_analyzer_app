@@ -1,7 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 import '../config/app_config.dart';
 import '../utils/network_helper.dart';
@@ -83,14 +88,17 @@ class ApiService {
         request.fields['product_category'] = category;
       }
 
+      final fileToSend = await _compressImage(imageFile, maxWidth: 1400, quality: 85);
       request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
+        await http.MultipartFile.fromPath('file', fileToSend.path),
       );
 
       var streamedResponse = await request.send().timeout(
         const Duration(seconds: 180),
       );
-      var response = await http.Response.fromStream(streamedResponse);
+      var response = await http.Response.fromStream(streamedResponse).timeout(
+        const Duration(seconds: 180),
+      );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -99,6 +107,10 @@ class ApiService {
           'Failed to analyze image: ${response.statusCode} - ${response.body}',
         );
       }
+    } on TimeoutException catch (e) {
+      throw Exception(
+        'Waktu koneksi habis (timeout) saat menganalisis gambar. Server membutuhkan waktu terlalu lama atau koneksi internet lambat. Detail: $e',
+      );
     } on SocketException catch (e) {
       throw Exception(
         'Cannot reach backend at $baseUrl. Make sure backend is running and, for real devices, use your LAN IP via --dart-define=API_BASE_URL=http://192.168.x.x:8000. Detail: $e',
@@ -161,7 +173,7 @@ class ApiService {
             headers: UserSession.authHeaders,
             body: jsonEncode(payload),
           )
-          .timeout(const Duration(seconds: 90));
+          .timeout(const Duration(seconds: 180));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -169,6 +181,10 @@ class ApiService {
 
       throw Exception(
         'Failed to analyze extracted text: ${response.statusCode} - ${response.body}',
+      );
+    } on TimeoutException catch (e) {
+      throw Exception(
+        'Waktu koneksi habis (timeout) saat menganalisis bahan. Server membutuhkan waktu terlalu lama atau koneksi internet lambat. Detail: $e',
       );
     } on SocketException catch (e) {
       throw Exception(
@@ -292,12 +308,13 @@ class ApiService {
     }
   }
 
-  /// Update user profile details (name, email, profile_picture, password)
+  /// Update user profile details (name, email, profile_picture, password, fcm_token)
   static Future<Map<String, dynamic>> updateProfile({
     String? name,
     String? email,
     String? profilePicture,
     String? password,
+    String? fcmToken,
   }) async {
     final payload = <String, dynamic>{};
     if (name != null && name.isNotEmpty) payload['name'] = name;
@@ -306,6 +323,7 @@ class ApiService {
       payload['profile_picture'] = profilePicture;
     }
     if (password != null && password.isNotEmpty) payload['password'] = password;
+    if (fcmToken != null && fcmToken.isNotEmpty) payload['fcm_token'] = fcmToken;
 
     try {
       final response = await http.post(
@@ -353,10 +371,9 @@ class ApiService {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final recs = data['recommendations'];
         if (recs is List) {
-          return recs
-              .whereType<Map>()
-              .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
-              .toList();
+          return List<Map<String, dynamic>>.from(
+            recs.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+          );
         }
       }
       return [];
@@ -381,10 +398,9 @@ class ApiService {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final cats = data['categories'];
         if (cats is List) {
-          return cats
-              .whereType<Map>()
-              .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
-              .toList();
+          return List<Map<String, dynamic>>.from(
+            cats.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+          );
         }
       }
       return _fallbackCategories();
@@ -395,22 +411,37 @@ class ApiService {
   }
 
   /// Fallback jika endpoint /categories tidak tersedia (offline / error).
+  /// Kategori berdasarkan definisi BPOM & standar skincare internasional.
+  /// Hanya mencakup produk perawatan kulit wajah (bukan makeup/haircare).
   static List<Map<String, dynamic>> _fallbackCategories() {
     return const [
-      {'id': 'toner',       'name': 'Toner'},
-      {'id': 'serum',       'name': 'Serum'},
-      {'id': 'moisturizer', 'name': 'Moisturizer'},
-      {'id': 'sunscreen',   'name': 'Sunscreen'},
-      {'id': 'cleanser',    'name': 'Cleanser'},
-      {'id': 'exfoliator',  'name': 'Exfoliator'},
-      {'id': 'eye_cream',   'name': 'Eye Cream'},
-      {'id': 'lip_care',    'name': 'Lip Care'},
-      {'id': 'mask',        'name': 'Mask'},
-      {'id': 'body_lotion', 'name': 'Body Lotion'},
-      {'id': 'body_wash',   'name': 'Body Wash'},
-      {'id': 'essence',     'name': 'Essence'},
-      {'id': 'primer',      'name': 'Primer'},
-      {'id': 'bb_cc_cream', 'name': 'BB / CC Cream'},
+      // Pembersih
+      {'id': 'cleanser',          'name': 'Cleanser'},
+      {'id': 'micellar_water',    'name': 'Micellar Water'},
+      {'id': 'cleansing_oil',     'name': 'Cleansing Oil/Balm'},
+      // Treatment Dasar
+      {'id': 'toner',             'name': 'Toner'},
+      {'id': 'essence',           'name': 'Essence'},
+      // Treatment Aktif
+      {'id': 'serum',             'name': 'Serum'},
+      {'id': 'ampoule',           'name': 'Ampoule'},
+      {'id': 'spot_treatment',    'name': 'Spot Treatment'},
+      {'id': 'retinol',           'name': 'Retinol'},
+      // Pelembap
+      {'id': 'moisturizer',       'name': 'Moisturizer'},
+      {'id': 'night_cream',       'name': 'Night Cream'},
+      // Mata & Bibir
+      {'id': 'eye_care',          'name': 'Eye Care'},
+      {'id': 'lip_care',          'name': 'Lip Care'},
+      // Pelindung
+      {'id': 'sunscreen',         'name': 'Sunscreen'},
+      // Perawatan Berkala
+      {'id': 'exfoliator',        'name': 'Exfoliator'},
+      {'id': 'face_mask',         'name': 'Face Mask'},
+      {'id': 'sheet_mask',        'name': 'Sheet Mask'},
+      {'id': 'facial_mist',       'name': 'Facial Mist'},
+      // Minyak Wajah
+      {'id': 'facial_oil',        'name': 'Facial Oil'},
     ];
   }
 
@@ -437,7 +468,11 @@ class ApiService {
         return list
             .map((json) {
               if (json is Map) {
+<<<<<<< HEAD
                 return IngredientMetric.fromJson(json.map((k, v) => MapEntry(k.toString(), v)));
+=======
+                return IngredientMetric.fromJson(Map<String, dynamic>.from(json));
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
               }
               return null;
             })
@@ -450,5 +485,58 @@ class ApiService {
       throw Exception('Error fetching ingredient metrics: $e');
     }
   }
+<<<<<<< HEAD
+=======
+
+  /// Kompresi dan resize gambar di HP sebelum di-upload agar proses upload super cepat (<0.5s)
+  /// dan dijalankan di background Isolate via compute() supaya animasi loading UI tidak lag/stutter.
+  static Future<File> _compressImage(File file, {int maxWidth = 1400, int quality = 85}) async {
+    try {
+      if (!await file.exists()) return file;
+      final bytes = await file.readAsBytes();
+      if (bytes.length < 250 * 1024) return file; // Jika sudah di bawah 250 KB, langsung kirim
+
+      // Jalankan komputasi berat (decode, resize, encode JPEG) di background Isolate CPU agar UI tetap 60 FPS
+      final resizedBytes = await compute(_imageCompressionWorker, {
+        'bytes': bytes,
+        'maxWidth': maxWidth,
+        'quality': quality,
+      });
+
+      if (resizedBytes == null) return file;
+
+      final tempDir = await getTemporaryDirectory();
+      final compressedFile = File('${tempDir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await compressedFile.writeAsBytes(resizedBytes);
+      return compressedFile;
+    } catch (e) {
+      return file;
+    }
+  }
+
+  static Uint8List? _imageCompressionWorker(Map<String, dynamic> params) {
+    try {
+      final bytes = params['bytes'] as Uint8List;
+      final maxWidth = params['maxWidth'] as int;
+      final quality = params['quality'] as int;
+
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) return null;
+
+      int targetWidth = decoded.width;
+      if (decoded.width > maxWidth) {
+        targetWidth = maxWidth;
+      }
+      final resized = img.copyResize(
+        decoded,
+        width: targetWidth,
+        interpolation: img.Interpolation.cubic,
+      );
+      return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
+    } catch (_) {
+      return null;
+    }
+  }
+>>>>>>> 24ea4c50eee912499c504bcc9e46bc5c4c05b6ff
 }
 

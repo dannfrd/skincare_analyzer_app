@@ -147,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Join Dermify to start your personalized AI-driven skincare journey today.',
+                    'Join Dermify to start your personalized skincare journey today.',
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.textGray,

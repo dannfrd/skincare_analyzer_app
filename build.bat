@@ -1,13 +1,13 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Skincare Analyzer - Build Tool
+title Dermify - Build Tool
 color 0A
 
 :menu
 cls
 echo ========================================
-echo   SKINCARE ANALYZER - BUILD TOOL
+echo   DERMIFY - BUILD TOOL
 echo ========================================
 echo.
 echo 1. Development Build (Debug)
@@ -45,13 +45,14 @@ call flutter clean
 if errorlevel 1 goto build_failed
 call flutter pub get
 if errorlevel 1 goto build_failed
-call flutter build apk --debug --dart-define=ENV=dev
+call flutter build apk --debug --dart-define=ENV=dev --build-name=1.0.0
 if errorlevel 1 goto build_failed
-if not exist "build\app\outputs\flutter-apk\app-debug.apk" goto apk_missing
+if not exist "build\app\outputs\apk\debug\app-debug.apk" goto apk_missing
+rename "build\app\outputs\apk\debug\app-debug.apk" "Dermify-debug.apk"
 echo.
 echo ========================================
 echo Build selesai!
-echo APK: build\app\outputs\flutter-apk\app-debug.apk
+echo APK: build\app\outputs\apk\debug\Dermify-debug.apk
 echo ========================================
 pause
 goto menu
@@ -62,7 +63,7 @@ echo ========================================
 echo   PRODUCTION BUILD
 echo ========================================
 echo Environment: Production
-echo Backend: http://43.156.119.43
+echo Backend: http://43.156.119.43:8000
 echo.
 call flutter clean
 if errorlevel 1 goto build_failed
@@ -70,11 +71,12 @@ call flutter pub get
 if errorlevel 1 goto build_failed
 call flutter build apk --release --dart-define=ENV=production
 if errorlevel 1 goto build_failed
-if not exist "build\app\outputs\flutter-apk\app-release.apk" goto apk_missing
+if not exist "build\app\outputs\apk\release\app-release.apk" goto apk_missing
+rename "build\app\outputs\apk\release\app-release.apk" "Dermify.apk"
 echo.
 echo ========================================
 echo Build selesai!
-echo APK: build\app\outputs\flutter-apk\app-release.apk
+echo APK: build\app\outputs\apk\release\Dermify.apk
 echo ========================================
 pause
 goto menu
@@ -100,11 +102,12 @@ call flutter pub get
 if errorlevel 1 goto build_failed
 call flutter build apk --release --dart-define=API_BASE_URL=%custom_url%
 if errorlevel 1 goto build_failed
-if not exist "build\app\outputs\flutter-apk\app-release.apk" goto apk_missing
+if not exist "build\app\outputs\apk\release\app-release.apk" goto apk_missing
+rename "build\app\outputs\apk\release\app-release.apk" "Dermify-custom.apk"
 echo.
 echo ========================================
 echo Build selesai!
-echo APK: build\app\outputs\flutter-apk\app-release.apk
+echo APK: build\app\outputs\apk\release\Dermify-custom.apk
 echo ========================================
 pause
 goto menu
@@ -127,7 +130,7 @@ echo ========================================
 echo   RUN PRODUCTION
 echo ========================================
 echo Environment: Production
-echo Backend: http://43.156.119.43
+echo Backend: http://43.156.119.43:8000
 echo.
 call flutter run --dart-define=ENV=production
 pause
