@@ -188,9 +188,12 @@ class FcmService {
   }
 
   // ── Background app opened from notification ─────────────────
+  // CATATAN: Notifikasi sudah disimpan oleh firebaseMessagingBackgroundHandler
+  // saat app di background. Kita TIDAK perlu menyimpan ulang agar tidak duplikat.
   Future<void> _onMessageOpenedApp(RemoteMessage message) async {
     debugPrint('📨 App opened from notification: ${message.notification?.title}');
-    await _saveAndRefresh(message);
+    // Hanya reload dari prefs (untuk sinkronisasi) & navigasi, TANPA menyimpan ulang
+    await _loadFromPrefs();
     _navigateToScreen(message);
   }
   
@@ -258,6 +261,21 @@ class FcmService {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getStringList(_prefKey) ?? [];
       final notif = FcmNotification.fromRemoteMessage(message);
+
+      // ── DEDUPLICATION: Jangan simpan jika ID sudah ada ──────
+      final alreadyExists = raw.any((s) {
+        try {
+          final decoded = jsonDecode(s) as Map<String, dynamic>;
+          return decoded['id'] == notif.id;
+        } catch (_) {
+          return false;
+        }
+      });
+      if (alreadyExists) {
+        debugPrint('⚠️ Notifikasi sudah ada, dilewati: ${notif.id}');
+        return;
+      }
+
       raw.insert(0, jsonEncode(notif.toJson())); // terbaru di atas
       // Batasi maksimal 50 notifikasi
       if (raw.length > 50) raw.removeLast();
